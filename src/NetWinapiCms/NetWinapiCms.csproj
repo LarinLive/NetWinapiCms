@@ -4,6 +4,7 @@
 	  <TargetFramework>net7.0</TargetFramework>
 	  <NoWarn>$(NoWarn);SYSLIB1054;CA2101</NoWarn>
 	  <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+	  <OutputType>Exe</OutputType>
   </PropertyGroup>
 
 </Project>

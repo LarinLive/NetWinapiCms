@@ -1,8 +1,5 @@
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
-using System.Text;
 
 namespace NetWinapiCms.NativeMethods;
 
@@ -10,27 +7,6 @@ namespace NetWinapiCms.NativeMethods;
 internal static class Advapi32
 {
 	public const string Advapi32Lib = "Advapi32.dll";
-
-
-
-
-	public readonly static string OID_ALG_SIGN_GOST_2001 = "1.2.643.2.2.19";
-	public readonly static string OID_ALG_SIGN_GOST_2012_256 = "1.2.643.7.1.1.1.1";
-	public readonly static string OID_ALG_SIGN_GOST_2012_512 = "1.2.643.7.1.1.1.2";
-	public readonly static string OID_ALG_DIGEST_GOST_94 = "1.2.643.2.2.9";
-	public readonly static string OID_ALG_DIGEST_GOST_2012_256 = "1.2.643.7.1.1.2.2";
-	public readonly static string OID_ALG_DIGEST_GOST_2012_512 = "1.2.643.7.1.1.2.3";
-	public readonly static string OID_ALG_DIGEST_SHA_1 = "1.3.14.3.2.26";
-	public readonly static string OID_ALG_DIGEST_SHA_256 = "2.16.840.1.101.3.4.2.1";
-
-	public readonly static byte[] szOID_ALG_SIGN_GOST_2001 = Encoding.UTF8.GetBytes(OID_ALG_SIGN_GOST_2001);
-	public readonly static byte[] szOID_ALG_SIGN_GOST_2012_256 = Encoding.UTF8.GetBytes(OID_ALG_SIGN_GOST_2012_256);
-	public readonly static byte[] szOID_ALG_SIGN_GOST_2012_512 = Encoding.UTF8.GetBytes(OID_ALG_SIGN_GOST_2012_512);
-	public readonly static byte[] szOID_ALG_DIGEST_GOST_94 = Encoding.UTF8.GetBytes(OID_ALG_DIGEST_GOST_94);
-	public readonly static byte[] szOID_ALG_DIGEST_GOST_2012_256 = Encoding.UTF8.GetBytes(OID_ALG_DIGEST_GOST_2012_256);
-	public readonly static byte[] szOID_ALG_DIGEST_GOST_2012_512 = Encoding.UTF8.GetBytes(OID_ALG_DIGEST_GOST_2012_512);
-	public readonly static byte[] szOID_ALG_DIGEST_SHA_256 = Encoding.UTF8.GetBytes(OID_ALG_DIGEST_SHA_256);
-
 
 	/// <summary>
 	/// The CryptReleaseContext function releases the handle of a cryptographic service provider (CSP) and a key container.

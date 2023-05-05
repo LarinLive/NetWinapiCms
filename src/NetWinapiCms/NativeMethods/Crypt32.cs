@@ -76,32 +76,28 @@ internal static class Crypt32
 		/// <summary>
 		/// Indicates which member of the union is being used
 		/// </summary>
-		public IdChoice dwIdChoice;
+		public uint dwIdChoice;
 
 		/// <summary>
 		/// If TRUE, any limitations specified by the extension in the Value member of this structure are imperative. If FALSE, limitations set by this extension can be ignored
 		/// </summary>
 		public CERT_ISSUER_SERIAL_NUMBER Value;
-
-		public enum IdChoice : uint
-		{
-			/// <summary>
-			/// IssuerSerialNumber
-			/// </summary>
-			CERT_ID_ISSUER_SERIAL_NUMBER = 1,
-
-			/// <summary>
-			/// KeyId
-			/// </summary>
-			CERT_ID_KEY_IDENTIFIER = 2,
-
-			/// <summary>
-			/// HashId
-			/// </summary>
-			CERT_ID_SHA1_HASH = 3
-		}
 	}
 
+	/// <summary>
+	/// IssuerSerialNumber
+	/// </summary>
+	public const uint CERT_ID_ISSUER_SERIAL_NUMBER = 1;
+
+	/// <summary>
+	/// KeyId
+	/// </summary>
+	public const uint CERT_ID_KEY_IDENTIFIER = 2;
+
+	/// <summary>
+	/// HashId
+	/// </summary>
+	public const uint CERT_ID_SHA1_HASH = 3;
 
 	/// <summary>
 	/// This CryptoAPI structure is used for an arbitrary array of bytes. It is declared in Wincrypt.h and provides flexibility for objects that can contain various data types.
@@ -113,7 +109,7 @@ internal static class Crypt32
 		/// <summary>
 		/// The version number of a certificate
 		/// </summary>
-		public Version dwVersion;
+		public uint dwVersion;
 
 		/// <summary>
 		/// A BLOB that contains the serial number of a certificate. The least significant byte is the zero byte of the pbData member of SerialNumber. 
@@ -170,28 +166,22 @@ internal static class Crypt32
 		/// An array of pointers to <see cref="CERT_EXTENSION"/> structures, each of which contains extension information about the certificate
 		/// </summary>
 		public nint rgExtension;
-
-		/// <summary>
-		/// The version number of a certificate
-		/// </summary>
-		public enum Version : uint
-		{
-			/// <summary>
-			/// Version 1
-			/// </summary>
-			CERT_V1 = 0,
-
-			/// <summary>
-			/// Version 2
-			/// </summary>
-			CERT_V2 = 1,
-
-			/// <summary>
-			/// Version 3
-			/// </summary>
-			CERT_V3 = 2
-		}
 	}
+
+	/// <summary>
+	/// Version 1
+	/// </summary>
+	public const uint CERT_V1 = 0;
+
+	/// <summary>
+	/// Version 2
+	/// </summary>
+	public const uint CERT_V2 = 1;
+
+	/// <summary>
+	/// Version 3
+	/// </summary>
+	public const uint CERT_V3 = 2;
 
 
 
@@ -243,21 +233,253 @@ internal static class Crypt32
 	/// <remarks>https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-certcreatecertificatecontext</remarks>
 	[DllImport(Crypt32Lib, CharSet = CharSet.Unicode, SetLastError = true)]
 	public static extern nint CertCreateCertificateContext(
-		[In] CertEncodingTypes dwCertEncodingType,
+		[In] uint dwCertEncodingType,
 		[In] nint pbCertEncoded,
 		[In] uint cbCertEncoded);
 
 
-	/// <summary>
-	/// Possible encoding types for the <see cref="CertCreateCertificateContext"/> function
-	/// </summary>
-	[Flags]
-	public enum CertEncodingTypes : uint
-	{
-		X509_ASN_ENCODING = 0x00000001,
-		PKCS_7_ASN_ENCODING = 0x00010000
-	}
+	public const uint CERT_ENCODING_TYPE_MASK = 0x0000FFFF;
+	public const uint CMSG_ENCODING_TYPE_MASK = 0xFFFF0000;
+	public const uint CRYPT_ASN_ENCODING = 0x00000001;
+	public const uint CRYPT_NDR_ENCODING = 0x00000002;
+	public const uint X509_ASN_ENCODING = 0x00000001;
+	public const uint X509_NDR_ENCODING = 0x00000002;
+	public const uint PKCS_7_ASN_ENCODING = 0x00010000;
+	public const uint PKCS_7_NDR_ENCODING = 0x00020000;
 
+
+
+	/// <summary>
+	/// Finds the first or next certificate context in a certificate store that matches a search criteria established by the dwFindType and its associated pvFindPara.
+	/// This function can be used in a loop to find all of the certificates in a certificate store that match the specified find criteria.
+	/// </summary>
+	/// <param name="hCertStore">A handle of the certificate store to be searched.</param>
+	/// <param name="dwCertEncodingType">Specifies the type of encoding used.</param>
+	/// <param name="dwFindFlags">Used with some dwFindType values to modify the search criteria. For most dwFindType values, dwFindFlags is not used and should be set to zero.</param>
+	/// <param name="dwFindType">Specifies the type of search being made. The search type determines the data type, contents, and the use of pvFindPara.</param>
+	/// <param name="pvFindPara">Points to a data item or structure used with dwFindType.</param>
+	/// <param name="pPrevCertContext">A pointer to the last <see cref="CERT_CONTEXT"/> structure returned by this function. This parameter must be NULL on the first call of the function. 
+	/// To find successive certificates meeting the search criteria, set pPrevCertContext to the pointer returned by the previous call to the function. 
+	/// This function frees the <see cref="CERT_CONTEXT"/> referenced by non-NULL values of this parameter.</param>
+	/// <returns>If the function succeeds, the function returns a pointer to a read-only <see cref="CERT_CONTEXT"/> structure.
+	/// If the function fails and a certificate that matches the search criteria is not found, the return value is NULL.</returns>
+	/// <remarks>https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-certfindcertificateinstore</remarks>
+	[DllImport(Crypt32Lib, CharSet = CharSet.Unicode, SetLastError = true)]
+	public static extern nint CertFindCertificateInStore(
+		[In] nint hCertStore,
+		[In] uint dwCertEncodingType,
+		[In] uint dwFindFlags,
+		[In] uint dwFindType,
+		[In] nint pvFindPara,
+		[In] nint pPrevCertContext);
+
+	// cert info flags.
+	public const uint CERT_INFO_VERSION_FLAG = 1;
+	public const uint CERT_INFO_SERIAL_NUMBER_FLAG = 2;
+	public const uint CERT_INFO_SIGNATURE_ALGORITHM_FLAG = 3;
+	public const uint CERT_INFO_ISSUER_FLAG = 4;
+	public const uint CERT_INFO_NOT_BEFORE_FLAG = 5;
+	public const uint CERT_INFO_NOT_AFTER_FLAG = 6;
+	public const uint CERT_INFO_SUBJECT_FLAG = 7;
+	public const uint CERT_INFO_SUBJECT_PUBLIC_KEY_INFO_FLAG = 8;
+	public const uint CERT_INFO_ISSUER_UNIQUE_ID_FLAG = 9;
+	public const uint CERT_INFO_SUBJECT_UNIQUE_ID_FLAG = 10;
+	public const uint CERT_INFO_EXTENSION_FLAG = 11;
+
+	// cert compare flags.
+	public const uint CERT_COMPARE_MASK = 0xFFFF;
+	public const uint CERT_COMPARE_SHIFT = 16;
+	public const uint CERT_COMPARE_ANY = 0;
+	public const uint CERT_COMPARE_SHA1_HASH = 1;
+	public const uint CERT_COMPARE_NAME = 2;
+	public const uint CERT_COMPARE_ATTR = 3;
+	public const uint CERT_COMPARE_MD5_HASH = 4;
+	public const uint CERT_COMPARE_PROPERTY = 5;
+	public const uint CERT_COMPARE_PUBLIC_KEY = 6;
+	public const uint CERT_COMPARE_HASH = CERT_COMPARE_SHA1_HASH;
+	public const uint CERT_COMPARE_NAME_STR_A = 7;
+	public const uint CERT_COMPARE_NAME_STR_W = 8;
+	public const uint CERT_COMPARE_KEY_SPEC = 9;
+	public const uint CERT_COMPARE_ENHKEY_USAGE = 10;
+	public const uint CERT_COMPARE_CTL_USAGE = CERT_COMPARE_ENHKEY_USAGE;
+	public const uint CERT_COMPARE_SUBJECT_CERT = 11;
+	public const uint CERT_COMPARE_ISSUER_OF = 12;
+	public const uint CERT_COMPARE_EXISTING = 13;
+	public const uint CERT_COMPARE_SIGNATURE_HASH = 14;
+	public const uint CERT_COMPARE_KEY_IDENTIFIER = 15;
+	public const uint CERT_COMPARE_CERT_ID = 16;
+	public const uint CERT_COMPARE_CROSS_CERT_DIST_POINTS = 17;
+	public const uint CERT_COMPARE_PUBKEY_MD5_HASH = 18;
+	public const uint CERT_COMPARE_SUBJECT_INFO_ACCESS = 19;
+	public const uint CERT_COMPARE_HASH_STR = 20;
+	public const uint CERT_COMPARE_HAS_PRIVATE_KEY = 21;
+
+	// cert find flags.
+	/// <summary>
+	/// No search criteria used. Returns the next certificate in the store.
+	/// </summary>
+	public const uint CERT_FIND_ANY = ((int)CERT_COMPARE_ANY << (int)CERT_COMPARE_SHIFT);
+
+	/// <summary>
+	/// Data type of pvFindPara: <see cref="CRYPT_INTEGER_BLOB"/> structure.
+	/// Searches for a certificate with a SHA1 hash that matches the hash in the <see cref="CRYPT_INTEGER_BLOB"/> structure.
+	/// </summary>
+	public const uint CERT_FIND_SHA1_HASH = ((int)CERT_COMPARE_SHA1_HASH << (int)CERT_COMPARE_SHIFT);
+
+	/// <summary>
+	/// Data type of pvFindPara: <see cref="CRYPT_INTEGER_BLOB"/> structure.
+	/// Searches for a certificate with an MD5 hash that matches the hash in <see cref="CRYPT_INTEGER_BLOB"/>.
+	/// </summary>
+	public const uint CERT_FIND_MD5_HASH = ((int)CERT_COMPARE_MD5_HASH << (int)CERT_COMPARE_SHIFT);
+
+	/// <summary>
+	/// Data type of pvFindPara: <see cref="CRYPT_INTEGER_BLOB"/> structure.
+	/// Searches for a certificate with a signature hash that matches the signature hash in the <see cref="CRYPT_INTEGER_BLOB"/> structure.
+	/// </summary>
+	public const uint CERT_FIND_SIGNATURE_HASH = ((int)CERT_COMPARE_SIGNATURE_HASH << (int)CERT_COMPARE_SHIFT);
+
+	/// <summary>
+	/// Data type of pvFindPara: <see cref="CRYPT_INTEGER_BLOB"/> structure.
+	/// Searches for a certificate with a <see cref="CERT_KEY_IDENTIFIER_PROP_ID"/> property that matches the key identifier in <see cref="CRYPT_INTEGER_BLOB"/>.
+	/// </summary>
+	public const uint CERT_FIND_KEY_IDENTIFIER = ((int)CERT_COMPARE_KEY_IDENTIFIER << (int)CERT_COMPARE_SHIFT);
+
+	/// <summary>
+	/// Data type of pvFindPara: <see cref="CRYPT_INTEGER_BLOB"/> structure.
+	/// Searches for a certificate with a SHA1 hash that matches the hash in the <see cref="CRYPT_INTEGER_BLOB"/> structure.
+	/// </summary>
+	public const uint CERT_FIND_HASH = CERT_FIND_SHA1_HASH;
+
+	/// <summary>
+	/// Data type of pvFindPara: DWORD variable that contains a property identifier.
+	/// Searches for a certificate with a property that matches the property identifier specified by the DWORD value in pvFindPara.
+	/// </summary>
+	public const uint CERT_FIND_PROPERTY = ((int)CERT_COMPARE_PROPERTY << (int)CERT_COMPARE_SHIFT);
+
+	/// <summary>
+	/// Data type of pvFindPara: <see cref="CERT_PUBLIC_KEY_INFO"/> structure.
+	/// Searches for a certificate with a public key that matches the public key in the <see cref="CERT_PUBLIC_KEY_INFO"/> structure.
+	/// </summary>
+	public const uint CERT_FIND_PUBLIC_KEY = ((int)CERT_COMPARE_PUBLIC_KEY << (int)CERT_COMPARE_SHIFT);
+
+	/// <summary>
+	/// Data type of pvFindPara: <see cref="CRYPT_INTEGER_BLOB"/> structure.
+	/// Searches for a certificate with an exact match of the entire subject name with the name in the <see cref="CRYPT_INTEGER_BLOB"/> structure.The search is restricted to certificates that match the value of dwCertEncodingType.
+	/// </summary>
+	public const uint CERT_FIND_SUBJECT_NAME = ((int)CERT_COMPARE_NAME << (int)CERT_COMPARE_SHIFT | (int)CERT_INFO_SUBJECT_FLAG);
+
+	/// <summary>
+	/// Data type of pvFindPara: <see cref="CERT_RDN"/> structure. Searches for a certificate with specified subject attributes that match attributes in the <see cref="CERT_RDN"/> structure.
+	/// If RDN values are set, the function compares attributes of the subject in a certificate with elements of the <see cref="CERT_RDN_ATTR"/> array in this <see cref="CERT_RDN"/> structure.
+	/// Comparisons iterate through the <see cref="CERT_RDN_ATTR"/> attributes looking for a match with the certificate's subject's attributes.
+	/// </summary>
+	public const uint CERT_FIND_SUBJECT_ATTR = ((int)CERT_COMPARE_ATTR << (int)CERT_COMPARE_SHIFT | (int)CERT_INFO_SUBJECT_FLAG);
+
+	/// <summary>
+	/// Data type of pvFindPara: <see cref="CRYPT_INTEGER_BLOB"/> structure. 
+	/// Search for a certificate with an exact match of the entire issuer name with the name in <see cref="CRYPT_INTEGER_BLOB"/>. 
+	/// The search is restricted to certificates that match the dwCertEncodingType.
+	/// </summary>
+	public const uint CERT_FIND_ISSUER_NAME = ((int)CERT_COMPARE_NAME << (int)CERT_COMPARE_SHIFT | (int)CERT_INFO_ISSUER_FLAG);
+
+	/// <summary>
+	/// Data type of pvFindPara: <see cref="CERT_RDN"/> structure. 
+	/// Searches for a certificate with specified issuer attributes that match attributes in the <see cref="CERT_RDN"/> structure. 
+	/// If these values are set, the function compares attributes of the issuer in a certificate with elements of the <see cref="CERT_RDN_ATTR"/> array in this <see cref="CERT_RDN"/> structure. 
+	/// Comparisons iterate through the <see cref="CERT_RDN_ATTR"/> attributes looking for a match with the certificate's issuer attributes.
+	/// </summary>
+	public const uint CERT_FIND_ISSUER_ATTR = ((int)CERT_COMPARE_ATTR << (int)CERT_COMPARE_SHIFT | (int)CERT_INFO_ISSUER_FLAG);
+
+	/// <summary>
+	/// Data type of pvFindPara: Null-terminated Unicode string.
+	/// Searches for a certificate that contains the specified subject name string. The certificate's subject member is converted to a name string of the appropriate type using the appropriate form of CertNameToStr formatted as CERT_SIMPLE_NAME_STR. 
+	/// Then a case-insensitive substring-within-a-string match is performed. When this value is set, the search is restricted to certificates whose encoding type matches dwCertEncodingType.
+	/// </summary>
+	public const uint CERT_FIND_SUBJECT_STR = CERT_FIND_SUBJECT_STR_W;
+	public const uint CERT_FIND_SUBJECT_STR_A = ((int)CERT_COMPARE_NAME_STR_A << (int)CERT_COMPARE_SHIFT | (int)CERT_INFO_SUBJECT_FLAG);
+	public const uint CERT_FIND_SUBJECT_STR_W = ((int)CERT_COMPARE_NAME_STR_W << (int)CERT_COMPARE_SHIFT | (int)CERT_INFO_SUBJECT_FLAG);
+
+	/// <summary>
+	/// Data type of pvFindPara: Null-terminated Unicode string. 
+	/// Searches for a certificate that contains the specified issuer name string. The certificate's issuer member is converted to a name string of the appropriate type using the appropriate form of CertNameToStr formatted as CERT_SIMPLE_NAME_STR. 
+	/// Then a case-insensitive substring-within-a-string match is performed. When this value is set, the search is restricted to certificates whose encoding type matches dwCertEncodingType.
+	/// </summary>
+	public const uint CERT_FIND_ISSUER_STR = CERT_FIND_ISSUER_STR_W;
+	public const uint CERT_FIND_ISSUER_STR_A = ((int)CERT_COMPARE_NAME_STR_A << (int)CERT_COMPARE_SHIFT | (int)CERT_INFO_ISSUER_FLAG);
+	public const uint CERT_FIND_ISSUER_STR_W = ((int)CERT_COMPARE_NAME_STR_W << (int)CERT_COMPARE_SHIFT | (int)CERT_INFO_ISSUER_FLAG);
+
+	/// <summary>
+	/// Data type of pvFindPara: DWORD variable that contains a key specification.
+	/// Searches for a certificate that has a <see cref="CERT_KEY_SPEC_PROP_ID"/> property that matches the key specification in pvFindPara.
+	/// </summary>
+	public const uint CERT_FIND_KEY_SPEC = ((int)CERT_COMPARE_KEY_SPEC << (int)CERT_COMPARE_SHIFT);
+	public const uint CERT_FIND_ENHKEY_USAGE = ((int)CERT_COMPARE_ENHKEY_USAGE << (int)CERT_COMPARE_SHIFT);
+
+	/// <summary>
+	/// Data type of pvFindPara: <see cref="CTL_USAGE"/> structure.
+	/// Searches for a certificate that has a szOID_ENHANCED_KEY_USAGE extension or a CERT_CTL_PROP_ID that matches the pszUsageIdentifier member of the <see cref="CTL_USAGE"/> structure.
+	/// </summary>
+	public const uint CERT_FIND_CTL_USAGE = CERT_FIND_ENHKEY_USAGE;
+
+	/// <summary>
+	/// Data type of pvFindPara: <see cref="CERT_INFO"/> structure.
+	/// Searches for a certificate with both an issuer and a serial number that match the issuer and serial number in the <see cref="CERT_INFO"/> structure.
+	/// </summary>
+	public const uint CERT_FIND_SUBJECT_CERT = ((int)CERT_COMPARE_SUBJECT_CERT << (int)CERT_COMPARE_SHIFT);
+
+	/// <summary>
+	/// Data type of pvFindPara: <see cref="CERT_CONTEXT"/> structure.
+	/// Searches for a certificate with a subject that matches the issuer in <see cref="CERT_CONTEXT"/>.
+	/// </summary>
+	public const uint CERT_FIND_ISSUER_OF = ((int)CERT_COMPARE_ISSUER_OF << (int)CERT_COMPARE_SHIFT);
+
+	/// <summary>
+	/// Data type of pvFindPara: <see cref="CERT_CONTEXT"/> structure.
+	/// Searches for a certificate that is an exact match of the specified certificate context.
+	/// </summary>
+	public const uint CERT_FIND_EXISTING = ((int)CERT_COMPARE_EXISTING << (int)CERT_COMPARE_SHIFT);
+
+	/// <summary>
+	/// Data type of pvFindPara: <see cref="CERT_ID"/> structure. 
+	/// Find the certificate identified by the specified <see cref="CERT_ID"/>.
+	/// </summary>
+	public const uint CERT_FIND_CERT_ID = ((int)CERT_COMPARE_CERT_ID << (int)CERT_COMPARE_SHIFT);
+
+	/// <summary>
+	/// Data type of pvFindPara: Not used.
+	/// Find a certificate that has either a cross certificate distribution point extension or property.
+	/// </summary>
+	public const uint CERT_FIND_CROSS_CERT_DIST_POINTS = ((int)CERT_COMPARE_CROSS_CERT_DIST_POINTS << (int)CERT_COMPARE_SHIFT);
+
+	/// <summary>
+	/// Data type of pvFindPara: CRYPT_HASH_BLOB structure.
+	/// Find a certificate whose MD5-hashed public key matches the specified hash.
+	/// </summary>
+	public const uint CERT_FIND_PUBKEY_MD5_HASH = ((int)CERT_COMPARE_PUBKEY_MD5_HASH << (int)CERT_COMPARE_SHIFT);
+	public const uint CERT_FIND_HASH_STR = ((int)CERT_COMPARE_HASH_STR << (int)CERT_COMPARE_SHIFT);
+
+	/// <summary>
+	/// Data type of pvFindPara: NULL, not used.
+	/// Searches for a certificate that has a private key.The key can be ephemeral or saved on disk.The key can be a legacy Cryptography API(CAPI) key or a CNG key.
+	/// </summary>
+	public const uint CERT_FIND_HAS_PRIVATE_KEY = ((int)CERT_COMPARE_HAS_PRIVATE_KEY << (int)CERT_COMPARE_SHIFT);
+
+	/// <summary>
+	/// Value is used only with the CERT_FIND_SUBJECT_ATTR and CERT_FIND_ISSUER_ATTR values for dwFindType. 
+	/// CERT_UNICODE_IS_RDN_ATTRS_FLAG must be set if the CERT_RDN_ATTR structure pointed to by pvFindPara was initialized with Unicode strings. 
+	/// Before any comparison is made, the string to be matched is converted by using X509_UNICODE_NAME to provide for Unicode comparisons.
+	/// </summary>
+	public const uint CERT_UNICODE_IS_RDN_ATTRS_FLAG = 0x1;
+
+	/// <summary>
+	/// A pointer to a <see cref="CERT_CHAIN_CONTEXT"/> certificate chain context to be freed. If the reference count on the context reaches zero, the storage allocated for the context is freed.
+	/// </summary>
+	/// <param name="pChainContext"></param>
+	/// <remarks>https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-certfreecertificatechain</remarks>
+	[DllImport(Crypt32Lib, CharSet = CharSet.Unicode, SetLastError = true)]
+	public static extern void CertFreeCertificateChain(
+		[In] nint pChainContext
+	);
 
 	/// <summary>
 	/// Frees a certificate context by decrementing its reference count. When the reference count goes to zero, the function frees the memory used by a certificate contex
@@ -266,7 +488,254 @@ internal static class Crypt32
 	/// <returns>The function always returns nonzero.</returns>
 	/// <remarks>https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-certfreecertificatecontext</remarks>
 	[DllImport(Crypt32Lib, CharSet = CharSet.Unicode, SetLastError = true)]
-	public static extern bool CertFreeCertificateContext([In] nint pCertContext);
+	public static extern bool CertFreeCertificateContext(
+		[In] nint pCertContext
+	);
+
+	/// <summary>
+	/// Builds a certificate chain context starting from an end certificate and going back, if possible, to a trusted root certificate.
+	/// </summary>
+	/// <param name="hChainEngine">A handle of the chain engine (namespace and cache) to be used. If hChainEngine is NULL, the default chain engine, <see cref="HCCE_CURRENT_USER"/>, is used.</param>
+	/// <param name="pCertContext">A pointer to the <see cref="CERT_CONTEXT"/> of the end certificate, the certificate for which a chain is being built. This certificate context will be the zero-index element in the first simple chain.</param>
+	/// <param name="pTime">A pointer to a <see cref="FILETIME"/> variable that indicates the time for which the chain is to be validated. Note that the time does not affect trust list, revocation, or root store checking. The current system time is used if NULL is passed to this parameter.</param>
+	/// <param name="hAdditionalStore">A handle to any additional store to search for supporting certificates and certificate trust lists (CTLs). This parameter can be NULL if no additional store is to be searched.</param>
+	/// <param name="pChainPara">A pointer to a <see cref="CERT_CHAIN_PARA"/> structure that includes chain-building parameters.</param>
+	/// <param name="dwFlags">Flag values that indicate special processing.</param>
+	/// <param name="pvReserved">This parameter is reserved and must be NULL.</param>
+	/// <param name="ppChainContext">The address of a pointer to the chain context created. When you have finished using the chain context, release the chain by calling the <see cref="CertFreeCertificateChain"/> function.</param>
+	/// <returns>If the function succeeds, the function returns nonzero (TRUE). If the function fails, it returns zero (FALSE).</returns>
+	/// <remarks>https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-certgetcertificatechain</remarks>
+	[DllImport(Crypt32Lib, CharSet = CharSet.Unicode, SetLastError = true)]
+	public static extern bool CertGetCertificateChain(
+	  [In, Optional] nint hChainEngine,
+	  [In] nint pCertContext,
+	  [In, Optional] nint pTime,
+	  [In] nint hAdditionalStore,
+	  [In] nint pChainPara,
+	  [In] uint dwFlags,
+	  [In] nint pvReserved,
+	  [Out] nint ppChainContext
+	);
+
+	public const nint HCCE_CURRENT_USER = 0x0;
+	public const nint HCCE_LOCAL_MACHINE = 0x1;
+	public const nint HCCE_SERIAL_LOCAL_MACHINE = 0x2;
+
+	/// <summary>
+	/// When this flag is set, the end certificate is cached, which might speed up the chain-building process. 
+	/// By default, the end certificate is not cached, and it would need to be verified each time a chain is built for it.
+	/// </summary>
+	public const uint CERT_CHAIN_CACHE_END_CERT = 0x00000001;
+
+	/// <summary>
+	/// Revocation checking only accesses cached URLs.
+	/// </summary>
+	public const uint CERT_CHAIN_REVOCATION_CHECK_CACHE_ONLY = 0x80000000;
+
+	/// <summary>
+	/// This flag is used internally during chain building for an online certificate status protocol (OCSP) signer certificate to prevent cyclic revocation checks. 
+	/// During chain building, if the OCSP response is signed by an independent OCSP signer, then, in addition to the original chain build, there is a second chain built for the OCSP signer certificate itself. 
+	/// This flag is used during this second chain build to inhibit a recursive independent OCSP signer certificate.
+	/// </summary>
+	public const uint CERT_CHAIN_REVOCATION_CHECK_OCSP_CERT = 0x04000000;
+
+	/// <summary>
+	/// Uses only cached URLs in building a certificate chain. The Internet and intranet are not searched for URL-based objects.
+	/// This flag is not applicable to revocation checking. Set <see cref="CERT_CHAIN_REVOCATION_CHECK_CACHE_ONLY"/> to use only cached URLs for revocation checking.
+	/// </summary>
+	public const uint CERT_CHAIN_CACHE_ONLY_URL_RETRIEVAL = 0x00000004;
+
+	/// <summary>
+	/// For performance reasons, the second pass of chain building only considers potential chain paths that have quality greater than or equal to the highest quality determined during the first pass. 
+	/// The first pass only considers valid signature, complete chain, and trusted roots to calculate chain quality. 
+	/// This flag can be set to disable this optimization and consider all potential chain paths during the second pass.
+	/// </summary>
+	public const uint CERT_CHAIN_DISABLE_PASS1_QUALITY_FILTERING = 0x00000040;
+
+	/// <summary>
+	/// This flag is not supported. Certificates in the "My" store are never considered for peer trust.
+	/// </summary>
+	public const uint CERT_CHAIN_DISABLE_MY_PEER_TRUST = 0x00000800;
+
+	/// <summary>
+	/// End entity certificates in the "TrustedPeople" store are trusted without performing any chain building. 
+	/// This function does not set the CERT_TRUST_IS_PARTIAL_CHAIN or CERT_TRUST_IS_UNTRUSTED_ROOT dwErrorStatus member bits of the ppChainContext parameter.
+	/// </summary>
+	public const uint CERT_CHAIN_ENABLE_PEER_TRUST = 0x00000400;
+
+	/// <summary>
+	/// Setting this flag indicates the caller wishes to opt into weak signature checks.
+	/// </summary>
+	public const uint CERT_CHAIN_OPT_IN_WEAK_SIGNATURE = 0x00010000;
+
+	/// <summary>
+	/// The default is to return only the highest quality chain path. Setting this flag will return the lower quality chains. 
+	/// These are returned in the cLowerQualityChainContext and rgpLowerQualityChainContext fields of the chain context.
+	/// </summary>
+	public const uint CERT_CHAIN_RETURN_LOWER_QUALITY_CONTEXTS = 0x00000080;
+
+	/// <summary>
+	/// Setting this flag inhibits the auto update of third-party roots from the Windows Update Web Server.
+	/// </summary>
+	public const uint CERT_CHAIN_DISABLE_AUTH_ROOT_AUTO_UPDATE = 0x00000100;
+
+	/// <summary>
+	/// When you set CERT_CHAIN_REVOCATION_ACCUMULATIVE_TIMEOUT and you also specify a value for the dwUrlRetrievalTimeout member of the CERT_CHAIN_PARA structure, the value you specify in dwUrlRetrievalTimeout represents the cumulative timeout across all revocation URL retrievals.
+	/// If you set CERT_CHAIN_REVOCATION_ACCUMULATIVE_TIMEOUT but do not specify a dwUrlRetrievalTimeout value, the maximum cumulative timeout is set, by default, to 20 seconds. 
+	/// Each URL tested will timeout after half of the remaining cumulative balance has passed. That is, the first URL times out after 10 seconds, the second after 5 seconds, the third after 2.5 seconds and so on until a URL succeeds, 20 seconds has passed, or there are no more URLs to test.
+	/// If you do not set CERT_CHAIN_REVOCATION_ACCUMULATIVE_TIMEOUT, each revocation URL in the chain is assigned a maximum timeout equal to the value specified in dwUrlRetrievalTimeout. 
+	/// If you do not specify a value for the dwUrlRetrievalTimeout member, each revocation URL is assigned a maximum default timeout of 15 seconds. 
+	/// If no URL succeeds, the maximum cumulative timeout value is 15 seconds multiplied by the number of URLs in the chain.
+	/// </summary>
+	public const uint CERT_CHAIN_REVOCATION_ACCUMULATIVE_TIMEOUT = 0x08000000;
+
+	/// <summary>
+	/// When this flag is set, pTime is used as the time stamp time to determine whether the end certificate was time valid. Current time can also be used to determine whether the end certificate remains time valid. 
+	/// All other certification authority (CA) and root certificates in the chain are checked by using current time and not pTime.
+	/// </summary>
+	public const uint CERT_CHAIN_TIMESTAMP_TIME = 0x00000200;
+
+	/// <summary>
+	/// Setting this flag explicitly turns off Authority Information Access (AIA) retrievals.
+	/// </summary>
+	public const uint CERT_CHAIN_DISABLE_AIA = 0x00002000;
+
+	/// <summary>
+	/// Revocation checking is done on the end certificate and only the end certificate.
+	/// </summary>
+	public const uint CERT_CHAIN_REVOCATION_CHECK_END_CERT = 0x10000000;
+
+	/// <summary>
+	/// Revocation checking is done on all of the certificates in every chain.
+	/// </summary>
+	public const uint CERT_CHAIN_REVOCATION_CHECK_CHAIN = 0x20000000;
+
+	/// <summary>
+	/// Revocation checking is done on all certificates in all of the chains except the root certificate.
+	/// </summary>
+	public const uint CERT_CHAIN_REVOCATION_CHECK_CHAIN_EXCLUDE_ROOT = 0x40000000;
+
+	/// <summary>
+	/// Establishes the searching and matching criteria to be used in building a certificate chain.
+	/// </summary>
+	/// <remarks>https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/ns-wincrypt-cert_chain_para</remarks>
+	[StructLayout(LayoutKind.Sequential)]
+	public struct CERT_CHAIN_PARA
+	{
+		/// <summary>
+		/// The size, in bytes, of this structure.
+		/// </summary>
+		public uint cbSize;
+
+		/// <summary>
+		/// Structure indicating the kind of matching necessary to find issuer certificates for building a certificate chain. 
+		/// The structure pointed to indicates whether AND or OR logic is to be used in the matching process. The structure also includes an array of OIDs to be matched.
+		/// </summary>
+		public CERT_USAGE_MATCH RequestedUsage;
+
+		/// <summary>
+		/// Optional structure that indicates the kind of issuance policy constraint matching that applies when building a certificate chain. 
+		/// The structure pointed to indicates whether AND or OR logic is to be used in the matching process. The structure also includes an array of OIDs to be matched.
+		/// </summary>
+		public CERT_USAGE_MATCH RequestedIssuancePolicy;
+
+		/// <summary>
+		/// Optional time, in milliseconds, before revocation checking times out. This member is optional.
+		/// </summary>
+		public uint dwUrlRetrievalTimeout;
+
+		/// <summary>
+		/// Optional member. When this flag is TRUE, an attempt is made to retrieve a new CRL if this update is greater than or equal to the current system time minus the dwRevocationFreshnessTime value. 
+		/// If this flag is not set, the CRL's next update time is used.
+		/// </summary>
+		public bool fCheckRevocationFreshnessTime;
+
+		/// <summary>
+		/// The current time, in seconds, minus the CRL's update time of all elements checked.
+		/// </summary>
+		public uint dwRevocationFreshnessTime;
+
+		/// <summary>
+		/// Optional member. When set to a non-NULL value, information cached before the time specified is considered to be not valid and cache resynchronization is performed.
+		/// </summary>
+		public nint pftCacheResync;
+
+		/// <summary>
+		/// Optional. Specify a pointer to a <see cref="CERT_STRONG_SIGN_PARA"/> structure to enable strong signature checking.
+		/// </summary>
+		public nint pStrongSignPara;
+
+		/// <summary>
+		/// Optional flags that modify chain retrieval behavior.
+		/// </summary>
+		public uint dwStrongSignFlags;
+	}
+
+	/// <summary>
+	/// If the chain is strong signed, the public key in the end certificate will be checked to verify whether it satisfies the minimum public key length requirements for a strong signature. 
+	/// You can specify this flag to disable default checking.
+	/// </summary>
+	public const uint CERT_CHAIN_STRONG_SIGN_DISABLE_END_CHECK_FLAG = 0x00000001;
+
+	/// <summary>
+	/// Provides criteria for identifying issuer certificates to be used to build a certificate chain.
+	/// </summary>
+	/// <remarks>https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/ns-wincrypt-cert_usage_match</remarks>
+	[StructLayout(LayoutKind.Sequential)]
+	public struct CERT_USAGE_MATCH
+	{
+		/// <summary>
+		/// Determines the kind of issuer matching to be done. In AND logic, the certificate must meet all criteria. In OR logic, the certificate must meet at least one of the criteria.
+		/// </summary>
+		public uint dwType;
+
+		/// <summary>
+		/// <see cref="CTL_USAGE"/> structure includes an array of certificate object identifiers (OIDs) that a certificate must match in order to be valid.
+		/// </summary>
+		public CTL_USAGE Usage;
+	}
+
+	public const uint USAGE_MATCH_TYPE_AND = 0x00000000;
+	public const uint USAGE_MATCH_TYPE_OR = 0x00000001;
+
+	/// <summary>
+	/// Contains an array of object identifiers (OIDs) for Certificate Trust List (CTL) extensions. CTL_USAGE structures are used in functions that search for CTLs for specific uses.
+	/// </summary>
+	/// <remarks>https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/ns-wincrypt-ctl_usage</remarks>
+	[StructLayout(LayoutKind.Sequential)]
+	public struct CTL_USAGE
+	{
+		/// <summary>
+		/// Number of elements in the rgpszUsageIdentifier member array
+		/// </summary>
+		public uint cUsageIdentifier;
+
+		/// <summary>
+		/// Array of object identifiers (OIDs) of CTL extensions.
+		/// </summary>
+		public nint rgpszUsageIdentifier;
+	}
+
+	/// <summary>
+	/// Opens a certificate store by using a specified store provider type. While this function can open a certificate store for most purposes, CertOpenSystemStore is recommended to open the most common certificate stores. 
+	/// CertOpenStore is required for more complex options and special cases.
+	/// </summary>
+	/// <param name="lpszStoreProvider">A pointer to a null-terminated ANSI string that contains the store provider type.</param>
+	/// <param name="dwEncodingType">Specifies the certificate encoding type and message encoding type.</param>
+	/// <param name="hCryptProv">This parameter is not used and should be set to NULL.</param>
+	/// <param name="dwFlags">These values consist of high-word and low-word values combined by using a bitwise-OR operation.</param>
+	/// <param name="pvPara">A value that can contain additional information for this function. The contents of this parameter depends on the value of the lpszStoreProvider and other parameters.</param>
+	/// <returns>If the function succeeds, the function returns a handle to the certificate store. When you have finished using the store, release the handle by calling the <see cref="CertCloseStore"/> function.
+	/// If the function fails, it returns NULL.</returns>
+	/// <remarks>https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-certopenstore</remarks>
+	[DllImport(Crypt32Lib, CharSet = CharSet.Unicode, SetLastError = true)]
+	public static extern nint CertOpenStore(
+		[In] nint lpszStoreProvider,
+		[In] uint dwEncodingType,
+		[In] nint hCryptProv,
+		[In] uint dwFlags,
+		[In] nint pvPara
+	);
 
 	/// <summary>
 	/// Contains information used to verify a message signature. It contains the signer index and signer public key. The signer public key can be the signer's <see cref="CERT_PUBLIC_KEY_INFO"/> structure, certificate context, or chain context.
@@ -291,41 +760,35 @@ internal static class Crypt32
 		public uint dwSignerIndex;
 
 		/// <summary>
-		/// 
+		/// The structure that contains the signer information.
 		/// </summary>
-		public SignerType dwSignerType;
+		public uint dwSignerType;
 
 		/// <summary>
 		/// A pointer to a <see cref="CERT_PUBLIC_KEY_INFO"/> structure, a certificate context, a chain context, or NULL depending on the value of dwSignerType.
 		/// </summary>
 		public nint pvSigner;
-
-		/// <summary>
-		/// Possible values for the dwSignerType field
-		/// </summary>
-		public enum SignerType : uint
-		{
-			/// <summary>
-			/// pvSigner contains a pointer to a <see cref="CERT_PUBLIC_KEY_INFO"/> structure
-			/// </summary>
-			CMSG_VERIFY_SIGNER_PUBKEY = 1,
-
-			/// <summary>
-			/// pvSigner contains a pointer to a <see cref="CERT_CONTEXT"/> structure
-			/// </summary>
-			CMSG_VERIFY_SIGNER_CERT = 2,
-
-			/// <summary>
-			/// pvSigner contains a pointer to a <see cref="CERT_CHAIN_CONTEXT"/> structure
-			/// </summary>
-			CMSG_VERIFY_SIGNER_CHAIN = 3,
-
-			/// <summary>
-			///  pvSigner contains NULL
-			/// </summary>
-			CMSG_VERIFY_SIGNER_NULL = 4
-		}
 	}
+
+	/// <summary>
+	/// pvSigner contains a pointer to a <see cref="CERT_PUBLIC_KEY_INFO"/> structure
+	/// </summary>
+	public const uint CMSG_VERIFY_SIGNER_PUBKEY = 1;
+
+	/// <summary>
+	/// pvSigner contains a pointer to a <see cref="CERT_CONTEXT"/> structure
+	/// </summary>
+	public const uint CMSG_VERIFY_SIGNER_CERT = 2;
+
+	/// <summary>
+	/// pvSigner contains a pointer to a <see cref="CERT_CHAIN_CONTEXT"/> structure
+	/// </summary>
+	public const uint CMSG_VERIFY_SIGNER_CHAIN = 3;
+
+	/// <summary>
+	///  pvSigner contains NULL
+	/// </summary>
+	public const uint CMSG_VERIFY_SIGNER_NULL = 4;
 
 	/// <summary>
 	/// Contains information to be passed to <see cref="CryptMsgOpenToEncode"/> if dwMsgType is CMSG_SIGNED
@@ -405,7 +868,7 @@ internal static class Crypt32
 		/// <summary>
 		/// Specifies the private key to be used
 		/// </summary>
-		public PrivateKeySpec dwKeySpec;
+		public uint dwKeySpec;
 
 		/// <summary>
 		/// A <see cref="CRYPT_ALGORITHM_IDENTIFIER"/> structure that specifies the hash algorithm
@@ -782,26 +1245,19 @@ internal static class Crypt32
 	/// In this case, no check is made to determine whether memory for contexts remains allocated.</param>
 	/// <returns>If the function succeeds, the return value is TRUE</returns>
 	[DllImport(Crypt32Lib, CharSet = CharSet.Unicode, SetLastError = true)]
-	public static extern bool CertCloseStore(nint hCertStore, CertCloseStoreFlags dwFlags);
+	public static extern bool CertCloseStore(
+		[In] nint hCertStore,
+		[In] uint dwFlags);
 
-	[Flags]
-	public enum CertCloseStoreFlags : uint
-	{
-		/// <summary>
-		/// None of the flags specified
-		/// </summary>
-		None = 0,
+	/// <summary>
+	/// Forces the freeing of memory for all contexts associated with the store. This flag can be safely used only when the store is opened in a function and neither the store handle nor any of its contexts are passed to any called functions
+	/// </summary>
+	public const uint CERT_CLOSE_STORE_FORCE_FLAG = 1;
 
-		/// <summary>
-		/// Forces the freeing of memory for all contexts associated with the store. This flag can be safely used only when the store is opened in a function and neither the store handle nor any of its contexts are passed to any called functions
-		/// </summary>
-		CERT_CLOSE_STORE_FORCE_FLAG = 1,
-
-		/// <summary>
-		/// Checks for nonfreed certificate, CRL, and CTL contexts. A returned error code indicates that one or more store elements is still in use. This flag should only be used as a diagnostic tool in the development of applications.
-		/// </summary>
-		CERT_CLOSE_STORE_CHECK_FLAG = 2
-	}
+	/// <summary>
+	/// Checks for nonfreed certificate, CRL, and CTL contexts. A returned error code indicates that one or more store elements is still in use. This flag should only be used as a diagnostic tool in the development of applications.
+	/// </summary>
+	public const uint CERT_CLOSE_STORE_CHECK_FLAG = 2;
 
 	/// <summary>
 	/// Obtains the private key for a certificate. This function is used to obtain access to a user's private key when the user's certificate is available, but the handle of the user's key container is not available. 
@@ -821,7 +1277,7 @@ internal static class Crypt32
 		[In] AcquiringFlags dwFlags,
 		[In] nint pvParameters,
 		out nint phCryptProvOrNCryptKey,
-		out PrivateKeySpec pdwKeySpec,
+		out uint pdwKeySpec,
 		out bool pfCallerFreeProv
 	);
 
@@ -880,15 +1336,9 @@ internal static class Crypt32
 		CRYPT_ACQUIRE_ONLY_NCRYPT_KEY_FLAG = 0x00040000
 	}
 
-	/// <summary>
-	/// Values for the CryptAcquireCertificatePrivateKey.pdwKeySpec parameter
-	/// </summary>
-	public enum PrivateKeySpec : uint
-	{
-		AT_KEYEXCHANGE = 1,
-		AT_SIGNATURE = 2,
-		CERT_NCRYPT_KEY_SPEC = 0xFFFFFFFF
-	}
+	public const uint AT_KEYEXCHANGE = 1;
+	public const uint AT_SIGNATURE = 2;
+	public const uint CERT_NCRYPT_KEY_SPEC = 0xFFFFFFFF;
 
 	/// <summary>
 	/// Frees memory allocated by <see cref="CryptMemAlloc"/> or <see cref="CryptMemRealloc"/>
@@ -1049,7 +1499,7 @@ internal static class Crypt32
 		[In] MsgParamType dwParamType,
 		[In] uint dwIndex,
 		[In] nint pvData,
-		ref uint pcbData
+		ref int pcbData
 	);
 
 
@@ -1320,7 +1770,7 @@ internal static class Crypt32
 		[In] MsgFlags dwFlags,
 		[In] MsgType dwMsgType,
 		[In] nint pvMsgEncodeInfo,
-		[In] [MarshalAs(UnmanagedType.LPStr)] string? pszInnerContentObjID,
+		[In][MarshalAs(UnmanagedType.LPStr)] string? pszInnerContentObjID,
 		[In] nint pStreamInfo);
 
 	/// <summary>
@@ -1490,4 +1940,19 @@ internal static class Crypt32
 		[Out] nint pTsSigner,
 		[Out] nint phStore
 	);
+
+	/// <summary>
+	/// Cannot find the original signer.
+	/// </summary>
+	public const int CRYPT_E_SIGNER_NOT_FOUND = unchecked((int)0x8009100E);
+
+	/// <summary>
+	/// Cannot find object or property.
+	/// </summary>
+	public const int CRYPT_E_NOT_FOUND = unchecked((int)0x80092004);
+
+	/// <summary>
+	/// The signed cryptographic message does not have a signer for the specified signer index.
+	/// </summary>
+	public const int CRYPT_E_NO_SIGNER = unchecked((int)0x8009200E);
 }
