@@ -1368,114 +1368,108 @@ internal static class Crypt32
 	[DllImport(Crypt32Lib, CharSet = CharSet.Unicode, SetLastError = true)]
 	public static extern bool CryptMsgControl(
 		[In] nint hCryptMsg,
-		[In] MsgFlags dwFlags,
-		[In] MsgControlType dwCtrlType,
+		[In] uint dwFlags,
+		[In] uint dwCtrlType,
 		[In] nint pvCtrlPara
 	);
 
 	/// <summary>
-	/// Message control types
+	/// A <see cref="CERT_INFO"/> structure that identifies the signer of the message whose signature is to be verified.
 	/// </summary>
-	public enum MsgControlType : uint
-	{
-		/// <summary>
-		/// A <see cref="CERT_INFO"/> structure that identifies the signer of the message whose signature is to be verified.
-		/// </summary>
-		CMSG_CTRL_VERIFY_SIGNATURE = 1,
+	public const uint CMSG_CTRL_VERIFY_SIGNATURE = 1;
 
-		/// <summary>
-		/// A <see cref="CMSG_CTRL_DECRYPT_PARA"/> structure used to decrypt the message for the specified key transport recipient. 
-		/// This value is applicable to RSA recipients. This operation specifies that the CryptMsgControl function search the recipient index to obtain the key transport recipient information.
-		/// </summary>
-		CMSG_CTRL_DECRYPT = 2,
+	/// <summary>
+	/// A <see cref="CMSG_CTRL_DECRYPT_PARA"/> structure used to decrypt the message for the specified key transport recipient. 
+	/// This value is applicable to RSA recipients. This operation specifies that the CryptMsgControl function search the recipient index to obtain the key transport recipient information.
+	/// </summary>
+	public const uint CMSG_CTRL_DECRYPT = 2;
 
-		/// <summary>
-		/// This value is not used.
-		/// </summary>
-		CMSG_CTRL_VERIFY_HASH = 5,
+	/// <summary>
+	/// This value is not used.
+	/// </summary>
+	public const uint CMSG_CTRL_VERIFY_HASH = 5;
 
-		/// <summary>
-		/// pvCtrlPara points to a <see cref="CMSG_SIGNER_ENCODE_INFO"/> structure that contains the signer information to be added to the message.
-		/// </summary>
-		CMSG_CTRL_ADD_SIGNER = 6,
+	/// <summary>
+	/// pvCtrlPara points to a <see cref="CMSG_SIGNER_ENCODE_INFO"/> structure that contains the signer information to be added to the message.
+	/// </summary>
+	public const uint CMSG_CTRL_ADD_SIGNER = 6;
 
-		/// <summary>
-		/// After a deletion is made, any other signer indices in use for this message are no longer valid and must be reacquired by calling the <see cref="CryptMsgGetParam"/> function.
-		/// </summary>
-		CMSG_CTRL_DEL_SIGNER = 7,
+	/// <summary>
+	/// After a deletion is made, any other signer indices in use for this message are no longer valid and must be reacquired by calling the <see cref="CryptMsgGetParam"/> function.
+	/// </summary>
+	public const uint CMSG_CTRL_DEL_SIGNER = 7;
 
-		/// <summary>
-		/// A <see cref="CMSG_CTRL_ADD_SIGNER_UNAUTH_ATTR_PARA"/> structure that contains the index of the signer and a BLOB that contains the unauthenticated attribute information to be added to the message.
-		/// </summary>
-		CMSG_CTRL_ADD_SIGNER_UNAUTH_ATTR = 8,
+	/// <summary>
+	/// A <see cref="CMSG_CTRL_ADD_SIGNER_UNAUTH_ATTR_PARA"/> structure that contains the index of the signer and a BLOB that contains the unauthenticated attribute information to be added to the message.
+	/// </summary>
+	public const uint CMSG_CTRL_ADD_SIGNER_UNAUTH_ATTR = 8;
 
-		/// <summary>
-		/// A <see cref="CMSG_CTRL_DEL_SIGNER_UNAUTH_ATTR_PARA"/> structure that contains an index that specifies the signer and the index that specifies the signer's unauthenticated attribute to be deleted.
-		/// </summary>
-		CMSG_CTRL_DEL_SIGNER_UNAUTH_ATTR = 9,
+	/// <summary>
+	/// A <see cref="CMSG_CTRL_DEL_SIGNER_UNAUTH_ATTR_PARA"/> structure that contains an index that specifies the signer and the index that specifies the signer's unauthenticated attribute to be deleted.
+	/// </summary>
+	public const uint CMSG_CTRL_DEL_SIGNER_UNAUTH_ATTR = 9;
 
-		/// <summary>
-		/// A <see cref="CRYPT_INTEGER_BLOB"/> structure that contains the encoded bytes of the certificate to be added to the message.
-		/// </summary>
-		CMSG_CTRL_ADD_CERT = 10,
+	/// <summary>
+	/// A <see cref="CRYPT_INTEGER_BLOB"/> structure that contains the encoded bytes of the certificate to be added to the message.
+	/// </summary>
+	public const uint CMSG_CTRL_ADD_CERT = 10;
 
-		/// <summary>
-		/// The index of the certificate to be deleted from the message.
-		/// </summary>
-		CMSG_CTRL_DEL_CERT = 11,
+	/// <summary>
+	/// The index of the certificate to be deleted from the message.
+	/// </summary>
+	public const uint CMSG_CTRL_DEL_CERT = 11;
 
-		/// <summary>
-		/// A BLOB that contains the encoded bytes of the CRL to be added to the message.
-		/// </summary>
-		CMSG_CTRL_ADD_CRL = 12,
+	/// <summary>
+	/// A BLOB that contains the encoded bytes of the CRL to be added to the message.
+	/// </summary>
+	public const uint CMSG_CTRL_ADD_CRL = 12;
 
-		/// <summary>
-		/// The index of the CRL to be deleted from the message.
-		/// </summary>
-		CMSG_CTRL_DEL_CRL = 13,
+	/// <summary>
+	/// The index of the CRL to be deleted from the message.
+	/// </summary>
+	public const uint CMSG_CTRL_DEL_CRL = 13;
 
-		/// <summary>
-		/// A BLOB that contains the encoded bytes of attribute certificate.
-		/// </summary>
-		CMSG_CTRL_ADD_ATTR_CERT = 14,
+	/// <summary>
+	/// A BLOB that contains the encoded bytes of attribute certificate.
+	/// </summary>
+	public const uint CMSG_CTRL_ADD_ATTR_CERT = 14;
 
-		/// <summary>
-		/// The index of the attribute certificate to be removed.
-		/// </summary>
-		CMSG_CTRL_DEL_ATTR_CERT = 15,
+	/// <summary>
+	/// The index of the attribute certificate to be removed.
+	/// </summary>
+	public const uint CMSG_CTRL_DEL_ATTR_CERT = 15;
 
-		/// <summary>
-		/// A <see cref="CMSG_CTRL_KEY_TRANS_DECRYPT_PARA"/> structure used to decrypt the message for the specified key transport recipient. Key transport is used with RSA encryption/decryption.
-		/// </summary>
-		CMSG_CTRL_KEY_TRANS_DECRYPT = 16,
+	/// <summary>
+	/// A <see cref="CMSG_CTRL_KEY_TRANS_DECRYPT_PARA"/> structure used to decrypt the message for the specified key transport recipient. Key transport is used with RSA encryption/decryption.
+	/// </summary>
+	public const uint CMSG_CTRL_KEY_TRANS_DECRYPT = 16;
 
-		/// <summary>
-		/// A <see cref="CMSG_CTRL_KEY_AGREE_DECRYPT_PARA"/> structure used to decrypt the message for the specified key agreement session key. Key agreement is used with Diffie-Hellman encryption/decryption.
-		/// </summary>
-		CMSG_CTRL_KEY_AGREE_DECRYPT = 17,
+	/// <summary>
+	/// A <see cref="CMSG_CTRL_KEY_AGREE_DECRYPT_PARA"/> structure used to decrypt the message for the specified key agreement session key. Key agreement is used with Diffie-Hellman encryption/decryption.
+	/// </summary>
+	public const uint CMSG_CTRL_KEY_AGREE_DECRYPT = 17;
 
-		/// <summary>
-		/// A <see cref="CMSG_CTRL_MAIL_LIST_DECRYPT_PARA"/> structure used to decrypt the message for the specified recipient using a previously distributed key-encryption key (KEK).
-		/// </summary>
-		CMSG_CTRL_MAIL_LIST_DECRYPT = 18,
+	/// <summary>
+	/// A <see cref="CMSG_CTRL_MAIL_LIST_DECRYPT_PARA"/> structure used to decrypt the message for the specified recipient using a previously distributed key-encryption key (KEK).
+	/// </summary>
+	public const uint CMSG_CTRL_MAIL_LIST_DECRYPT = 18;
 
-		/// <summary>
-		/// A <see cref="CMSG_CTRL_VERIFY_SIGNATURE_EX_PARA"/> structure that specifies the signer index and public key to verify the message signature. 
-		/// The signer public key can be a <see cref="CERT_PUBLIC_KEY_INFO"/> structure, a certificate context, or a certificate chain context.
-		/// </summary>
-		CMSG_CTRL_VERIFY_SIGNATURE_EX = 19,
+	/// <summary>
+	/// A <see cref="CMSG_CTRL_VERIFY_SIGNATURE_EX_PARA"/> structure that specifies the signer index and public key to verify the message signature. 
+	/// The signer public key can be a <see cref="CERT_PUBLIC_KEY_INFO"/> structure, a certificate context, or a certificate chain context.
+	/// </summary>
+	public const uint CMSG_CTRL_VERIFY_SIGNATURE_EX = 19;
 
-		/// <summary>
-		/// A <see cref="CMSG_CMS_SIGNER_INFO"/> structure that contains signer information. This operation differs from CMSG_CTRL_ADD_SIGNER because the signer information contains the signature.
-		/// </summary>
-		CMSG_CTRL_ADD_CMS_SIGNER_INFO = 20,
+	/// <summary>
+	/// A <see cref="CMSG_CMS_SIGNER_INFO"/> structure that contains signer information. This operation differs from CMSG_CTRL_ADD_SIGNER because the signer information contains the signature.
+	/// </summary>
+	public const uint CMSG_CTRL_ADD_CMS_SIGNER_INFO = 20;
 
-		/// <summary>
-		/// A <see cref="CERT_STRONG_SIGN_PARA"/> structure used to perform strong signature checking.
-		/// </summary>
-		CMSG_CTRL_ENABLE_STRONG_SIGNATURE = 21
-	}
-
+	/// <summary>
+	/// A <see cref="CERT_STRONG_SIGN_PARA"/> structure used to perform strong signature checking.
+	/// </summary>
+	public const uint CMSG_CTRL_ENABLE_STRONG_SIGNATURE = 21;
+	
 
 	/// <summary>
 	/// Acquires a message parameter after a cryptographic message has been encoded or decoded
@@ -1490,7 +1484,7 @@ internal static class Crypt32
 	[DllImport(Crypt32Lib, CharSet = CharSet.Unicode, SetLastError = true)]
 	public static extern bool CryptMsgGetParam(
 		[In] nint hCryptMsg,
-		[In] MsgParamType dwParamType,
+		[In] uint dwParamType,
 		[In] uint dwIndex,
 		[In] nint pvData,
 		ref int pcbData
@@ -1506,224 +1500,223 @@ internal static class Crypt32
 		/// pvData data type: pointer to a DWORD. 
 		/// Returns the message type of a decoded message of unknown type. The retrieved message type can be compared to supported types to determine whether processing can continued
 		/// </summary>
-		CMSG_TYPE_PARAM = 1,
+		public const uint CMSG_TYPE_PARAM = 1;
 
-		/// <summary>
-		/// pvData data type: pointer to a BYTE array.
-		/// Returns the whole PKCS #7 message from a message opened to encode. Retrieves the inner content of a message opened to decode. 
-		/// If the message is enveloped, the inner type is data, and <see cref="CryptMsgControl"/> has been called to decrypt the message, the decrypted content is returned. 
-		/// If the inner type is not data, the encoded BLOB that requires further decoding is returned. 
-		/// If the message is not enveloped and the inner content is DATA, the returned data is the octets of the inner content. 
-		/// This type is applicable to both encode and decode. For decoding, if the type is CMSG_DATA, the content's octets are returned; else, the encoded inner content is returned.
-		/// </summary>
-		CMSG_CONTENT_PARAM = 2,
+	/// <summary>
+	/// pvData data type: pointer to a BYTE array.
+	/// Returns the whole PKCS #7 message from a message opened to encode. Retrieves the inner content of a message opened to decode. 
+	/// If the message is enveloped, the inner type is data, and <see cref="CryptMsgControl"/> has been called to decrypt the message, the decrypted content is returned. 
+	/// If the inner type is not data, the encoded BLOB that requires further decoding is returned. 
+	/// If the message is not enveloped and the inner content is DATA, the returned data is the octets of the inner content. 
+	/// This type is applicable to both encode and decode. For decoding, if the type is CMSG_DATA, the content's octets are returned; else, the encoded inner content is returned.
+	/// </summary>
+	public const uint CMSG_CONTENT_PARAM = 2;
 
-		/// <summary>
-		/// pvData data type: pointer to a BYTE array.
-		/// Retrieves the encoded content of an encoded cryptographic message, without the outer layer of the CONTENT_INFO structure. That is, only the encoding of the PKCS #7 defined ContentInfo.content field is returned
-		/// </summary>
-		CMSG_BARE_CONTENT_PARAM = 3,
+	/// <summary>
+	/// pvData data type: pointer to a BYTE array.
+	/// Retrieves the encoded content of an encoded cryptographic message, without the outer layer of the CONTENT_INFO structure. That is, only the encoding of the PKCS #7 defined ContentInfo.content field is returned
+	/// </summary>
+	public const uint CMSG_BARE_CONTENT_PARAM = 3;
 
-		/// <summary>
-		/// pvData data type: pointer to a BYTE array to receive a null-terminated object identifier (OID) string.
-		/// Returns the inner content type of a received message. This type is not applicable to messages of type DATA
-		/// </summary>
-		CMSG_INNER_CONTENT_TYPE_PARAM = 4,
+	/// <summary>
+	/// pvData data type: pointer to a BYTE array to receive a null-terminated object identifier (OID) string.
+	/// Returns the inner content type of a received message. This type is not applicable to messages of type DATA
+	/// </summary>
+	public const uint CMSG_INNER_CONTENT_TYPE_PARAM = 4;
 
-		/// <summary>
-		/// pvData data type: pointer to a DWORD.
-		/// Returns the number of signers of a received SIGNED message
-		/// </summary>
-		CMSG_SIGNER_COUNT_PARAM = 5,
+	/// <summary>
+	/// pvData data type: pointer to a DWORD.
+	/// Returns the number of signers of a received SIGNED message
+	/// </summary>
+	public const uint CMSG_SIGNER_COUNT_PARAM = 5;
 
-		/// <summary>
-		/// pvData data type: pointer to a BYTE array to receive a <see cref="CMSG_SIGNER_INFO"/> structure. 
-		/// Returns information on a message signer. This includes the issuer and serial number of the signer's certificate and authenticated and unauthenticated attributes of the signer's certificate. 
-		/// To retrieve signer information on all of the signers of a message, call <see cref="CryptMsgGetParam"/> varying dwIndex from 0 to the number of signers minus one
-		/// </summary>
-		CMSG_SIGNER_INFO_PARAM = 6,
+	/// <summary>
+	/// pvData data type: pointer to a BYTE array to receive a <see cref="CMSG_SIGNER_INFO"/> structure. 
+	/// Returns information on a message signer. This includes the issuer and serial number of the signer's certificate and authenticated and unauthenticated attributes of the signer's certificate. 
+	/// To retrieve signer information on all of the signers of a message, call <see cref="CryptMsgGetParam"/> varying dwIndex from 0 to the number of signers minus one
+	/// </summary>
+	public const uint CMSG_SIGNER_INFO_PARAM = 6;
 
-		/// <summary>
-		/// pvData data type: pointer to a BYTE array to receive the <see cref="CERT_INFO"/> structure. 
-		/// Returns information on a message signer needed to identify the signer's certificate. A certificate's Issuer and SerialNumber can be used to uniquely identify a certificate for retrieval. 
-		/// To retrieve information for all the signers, repetitively call <see cref="CryptMsgGetParam"/> varying dwIndex from 0 to the number of signers minus one. 
-		/// Only the Issuer and SerialNumber fields in the <see cref="CERT_INFO"/> structure returned contain available, valid data
-		/// </summary>
-		CMSG_SIGNER_CERT_INFO_PARAM = 7,
+	/// <summary>
+	/// pvData data type: pointer to a BYTE array to receive the <see cref="CERT_INFO"/> structure. 
+	/// Returns information on a message signer needed to identify the signer's certificate. A certificate's Issuer and SerialNumber can be used to uniquely identify a certificate for retrieval. 
+	/// To retrieve information for all the signers, repetitively call <see cref="CryptMsgGetParam"/> varying dwIndex from 0 to the number of signers minus one. 
+	/// Only the Issuer and SerialNumber fields in the <see cref="CERT_INFO"/> structure returned contain available, valid data
+	/// </summary>
+	public const uint CMSG_SIGNER_CERT_INFO_PARAM = 7;
 
-		/// <summary>
-		/// pvData data type: pointer to a BYTE array to receive the <see cref="CRYPT_ALGORITHM_IDENTIFIER"/> structure. 
-		/// Returns the hash algorithm used by a signer of the message. To get the hash algorithm for a specified signer, call <see cref="CryptMsgGetParam"/> with dwIndex equal to that signer's index.
-		/// </summary>
-		CMSG_SIGNER_HASH_ALGORITHM_PARAM = 8,
+	/// <summary>
+	/// pvData data type: pointer to a BYTE array to receive the <see cref="CRYPT_ALGORITHM_IDENTIFIER"/> structure. 
+	/// Returns the hash algorithm used by a signer of the message. To get the hash algorithm for a specified signer, call <see cref="CryptMsgGetParam"/> with dwIndex equal to that signer's index.
+	/// </summary>
+	public const uint CMSG_SIGNER_HASH_ALGORITHM_PARAM = 8;
 
-		/// <summary>
-		/// pvData data type: pointer to a BYTE array to receive a <see cref="CRYPT_ATTRIBUTES"/> structure.
-		/// Returns the authenticated attributes of a message signer. To retrieve the authenticated attributes for a specified signer, call <see cref="CryptMsgGetParam"/> with dwIndex equal to that signer's index.
-		/// </summary>
-		CMSG_SIGNER_AUTH_ATTR_PARAM = 9,
+	/// <summary>
+	/// pvData data type: pointer to a BYTE array to receive a <see cref="CRYPT_ATTRIBUTES"/> structure.
+	/// Returns the authenticated attributes of a message signer. To retrieve the authenticated attributes for a specified signer, call <see cref="CryptMsgGetParam"/> with dwIndex equal to that signer's index.
+	/// </summary>
+	public const uint CMSG_SIGNER_AUTH_ATTR_PARAM = 9;
 
-		/// <summary>
-		/// pvData data type: pointer to a BYTE array to receive a CRYPT_ATTRIBUTES structure. 
-		/// Returns a message signer's unauthenticated attributes. To retrieve the unauthenticated attributes for a specified signer, call <see cref="CryptMsgGetParam"/> with dwIndex equal to that signer's index
-		/// </summary>
-		CMSG_SIGNER_UNAUTH_ATTR_PARAM = 10,
+	/// <summary>
+	/// pvData data type: pointer to a BYTE array to receive a CRYPT_ATTRIBUTES structure. 
+	/// Returns a message signer's unauthenticated attributes. To retrieve the unauthenticated attributes for a specified signer, call <see cref="CryptMsgGetParam"/> with dwIndex equal to that signer's index
+	/// </summary>
+	public const uint CMSG_SIGNER_UNAUTH_ATTR_PARAM = 10;
 
-		/// <summary>
-		/// pvData data type: pointer to DWORD.
-		/// Returns the number of certificates in a received SIGNED or ENVELOPED message.
-		/// </summary>
-		CMSG_CERT_COUNT_PARAM = 11,
+	/// <summary>
+	/// pvData data type: pointer to DWORD.
+	/// Returns the number of certificates in a received SIGNED or ENVELOPED message.
+	/// </summary>
+	public const uint CMSG_CERT_COUNT_PARAM = 11;
 
-		/// <summary>
-		/// pvData data type: pointer to a BYTE array.
-		/// Returns a signer's certificate. To get all of the signer's certificates, call <see cref="CryptMsgGetParam"/>, varying dwIndex from 0 to the number of available certificates minus one.
-		/// </summary>
-		CMSG_CERT_PARAM = 12,
+	/// <summary>
+	/// pvData data type: pointer to a BYTE array.
+	/// Returns a signer's certificate. To get all of the signer's certificates, call <see cref="CryptMsgGetParam"/>, varying dwIndex from 0 to the number of available certificates minus one.
+	/// </summary>
+	public const uint CMSG_CERT_PARAM = 12;
 
-		/// <summary>
-		/// pvData data type: pointer to DWORD. 
-		/// Returns the count of CRLs in a received, SIGNED or ENVELOPED message.
-		/// </summary>
-		CMSG_CRL_COUNT_PARAM = 13,
+	/// <summary>
+	/// pvData data type: pointer to DWORD. 
+	/// Returns the count of CRLs in a received, SIGNED or ENVELOPED message.
+	/// </summary>
+	public const uint CMSG_CRL_COUNT_PARAM = 13;
 
-		/// <summary>
-		/// pvData data type: pointer to a BYTE array.
-		/// Returns a CRL. To get all the CRLs, call CryptMsgGetParam, varying dwIndex from 0 to the number of available CRLs minus one.
-		/// </summary>
-		CMSG_CRL_PARAM = 14,
+	/// <summary>
+	/// pvData data type: pointer to a BYTE array.
+	/// Returns a CRL. To get all the CRLs, call CryptMsgGetParam, varying dwIndex from 0 to the number of available CRLs minus one.
+	/// </summary>
+	public const uint CMSG_CRL_PARAM = 14;
 
-		/// <summary>
-		/// pvData data type: pointer to a BYTE array for a <see cref="CRYPT_ALGORITHM_IDENTIFIER"/> structure.
-		/// Returns the encryption algorithm used to encrypt an ENVELOPED message
-		/// </summary>
-		CMSG_ENVELOPE_ALGORITHM_PARAM = 15,
+	/// <summary>
+	/// pvData data type: pointer to a BYTE array for a <see cref="CRYPT_ALGORITHM_IDENTIFIER"/> structure.
+	/// Returns the encryption algorithm used to encrypt an ENVELOPED message
+	/// </summary>
+	public const uint CMSG_ENVELOPE_ALGORITHM_PARAM = 15;
 
-		/// <summary>
-		/// pvData data type: pointer to a DWORD. 
-		/// Returns the number of key transport recipients of an ENVELOPED received message.
-		/// </summary>
-		CMSG_RECIPIENT_COUNT_PARAM = 17,
+	/// <summary>
+	/// pvData data type: pointer to a DWORD. 
+	/// Returns the number of key transport recipients of an ENVELOPED received message.
+	/// </summary>
+	public const uint CMSG_RECIPIENT_COUNT_PARAM = 17;
 
-		/// <summary>
-		/// pvData data type: pointer to a DWORD.
-		/// Returns the index of the key transport recipient used to decrypt an ENVELOPED message. This value is available only after a message has been decrypted.
-		/// </summary>
-		CMSG_RECIPIENT_INDEX_PARAM = 18,
+	/// <summary>
+	/// pvData data type: pointer to a DWORD.
+	/// Returns the index of the key transport recipient used to decrypt an ENVELOPED message. This value is available only after a message has been decrypted.
+	/// </summary>
+	public const uint CMSG_RECIPIENT_INDEX_PARAM = 18;
 
-		/// <summary>
-		/// pvData data type: pointer to a BYTE array to receive a <see cref="CERT_INFO"/> structure.
-		/// Returns certificate information about a key transport message's recipient. To get certificate information on all key transport message's recipients, repetitively call <see cref="CryptMsgGetParam"/>, varying dwIndex from 0 to the number of recipients minus one. 
-		/// Only the Issuer, SerialNumber, and PublicKeyAlgorithm members of the CERT_INFO structure returned are available and valid
-		/// </summary>
-		CMSG_RECIPIENT_INFO_PARAM = 19,
+	/// <summary>
+	/// pvData data type: pointer to a BYTE array to receive a <see cref="CERT_INFO"/> structure.
+	/// Returns certificate information about a key transport message's recipient. To get certificate information on all key transport message's recipients, repetitively call <see cref="CryptMsgGetParam"/>, varying dwIndex from 0 to the number of recipients minus one. 
+	/// Only the Issuer, SerialNumber, and PublicKeyAlgorithm members of the CERT_INFO structure returned are available and valid
+	/// </summary>
+	public const uint CMSG_RECIPIENT_INFO_PARAM = 19;
 
-		/// <summary>
-		/// pvData data type: pointer to a BYTE array for a <see cref="CRYPT_ALGORITHM_IDENTIFIER"/> structure.
-		/// Returns the hash algorithm used to hash the message when it was created.
-		/// </summary>
-		CMSG_HASH_ALGORITHM_PARAM = 20,
+	/// <summary>
+	/// pvData data type: pointer to a BYTE array for a <see cref="CRYPT_ALGORITHM_IDENTIFIER"/> structure.
+	/// Returns the hash algorithm used to hash the message when it was created.
+	/// </summary>
+	public const uint CMSG_HASH_ALGORITHM_PARAM = 20;
 
-		/// <summary>
-		/// pvData data type: pointer to a BYTE array.
-		/// Returns the hash value stored in the message when it was created.
-		/// </summary>
-		CMSG_HASH_DATA_PARAM = 21,
+	/// <summary>
+	/// pvData data type: pointer to a BYTE array.
+	/// Returns the hash value stored in the message when it was created.
+	/// </summary>
+	public const uint CMSG_HASH_DATA_PARAM = 21;
 
-		/// <summary>
-		/// pvData data type: pointer to a BYTE array.
-		/// Returns the hash calculated of the data in the message. This type is applicable to both encode and decode.
-		/// </summary>
-		CMSG_COMPUTED_HASH_PARAM = 22,
+	/// <summary>
+	/// pvData data type: pointer to a BYTE array.
+	/// Returns the hash calculated of the data in the message. This type is applicable to both encode and decode.
+	/// </summary>
+	public const uint CMSG_COMPUTED_HASH_PARAM = 22;
 
-		/// <summary>
-		/// pvData data type: pointer to a BYTE array for a <see cref="CRYPT_ALGORITHM_IDENTIFIER"/> structure.
-		/// Returns the encryption algorithm used to encrypted the message.
-		/// </summary>
-		CMSG_ENCRYPT_PARAM = 26,
+	/// <summary>
+	/// pvData data type: pointer to a BYTE array for a <see cref="CRYPT_ALGORITHM_IDENTIFIER"/> structure.
+	/// Returns the encryption algorithm used to encrypted the message.
+	/// </summary>
+	public const uint CMSG_ENCRYPT_PARAM = 26;
 
-		/// <summary>
-		/// pvData data type: pointer to a BYTE array.
-		/// Returns the encrypted hash of a signature. Typically used for performing time-stamping.
-		/// </summary>
-		CMSG_ENCRYPTED_DIGEST = 27,
+	/// <summary>
+	/// pvData data type: pointer to a BYTE array.
+	/// Returns the encrypted hash of a signature. Typically used for performing time-stamping.
+	/// </summary>
+	public const uint CMSG_ENCRYPTED_DIGEST = 27;
 
-		/// <summary>
-		/// pvData data type: pointer to a BYTE array. 
-		/// Returns the encoded <see cref="CMSG_SIGNER_INFO"/> signer information for a message signer.
-		/// </summary>
-		CMSG_ENCODED_SIGNER = 28,
+	/// <summary>
+	/// pvData data type: pointer to a BYTE array. 
+	/// Returns the encoded <see cref="CMSG_SIGNER_INFO"/> signer information for a message signer.
+	/// </summary>
+	public const uint CMSG_ENCODED_SIGNER = 28;
 
-		/// <summary>
-		/// pvData data type: pointer to a BYTE array.	Changes the contents of an already encoded message. The message must first be decoded with a call to <see cref="CryptMsgOpenToDecode"/>. 
-		/// Then the change to the message is made through a call to <see cref="CryptMsgControl"/>, <see cref="CryptMsgCountersign"/>, or <see cref="CryptMsgCountersignEncoded"/>. 
-		/// The message is then encoded again with a call to <see cref="CryptMsgGetParam"/>, specifying CMSG_ENCODED_MESSAGE to get a new encoding that reflects the changes made. This can be used, for instance, to add a time-stamp attribute to a message.
-		/// </summary>
-		CMSG_ENCODED_MESSAGE = 29,
+	/// <summary>
+	/// pvData data type: pointer to a BYTE array.	Changes the contents of an already encoded message. The message must first be decoded with a call to <see cref="CryptMsgOpenToDecode"/>. 
+	/// Then the change to the message is made through a call to <see cref="CryptMsgControl"/>, <see cref="CryptMsgCountersign"/>, or <see cref="CryptMsgCountersignEncoded"/>. 
+	/// The message is then encoded again with a call to <see cref="CryptMsgGetParam"/>, specifying CMSG_ENCODED_MESSAGE to get a new encoding that reflects the changes made. This can be used, for instance, to add a time-stamp attribute to a message.
+	/// </summary>
+	public const uint CMSG_ENCODED_MESSAGE = 29;
 
-		/// <summary>
-		/// pvData data type: pointer to a DWORD. 
-		/// Returns the version of the decoded message.
-		/// </summary>
-		CMSG_VERSION_PARAM = 30,
+	/// <summary>
+	/// pvData data type: pointer to a DWORD. 
+	/// Returns the version of the decoded message.
+	/// </summary>
+	public const uint CMSG_VERSION_PARAM = 30;
 
-		/// <summary>
-		/// pvData data type: pointer to a DWORD. 
-		/// Returns the count of the attribute certificates in a SIGNED or ENVELOPED message.
-		/// </summary>
-		CMSG_ATTR_CERT_COUNT_PARAM = 31,
+	/// <summary>
+	/// pvData data type: pointer to a DWORD. 
+	/// Returns the count of the attribute certificates in a SIGNED or ENVELOPED message.
+	/// </summary>
+	public const uint CMSG_ATTR_CERT_COUNT_PARAM = 31;
 
-		/// <summary>
-		/// pvData data type: pointer to a BYTE array. 
-		/// Retrieves an attribute certificate. To get all the attribute certificates, call <see cref="CryptMsgGetParam"/> varying dwIndex set to 0 the number of attributes minus one.
-		/// </summary>
-		CMSG_ATTR_CERT_PARAM = 32,
+	/// <summary>
+	/// pvData data type: pointer to a BYTE array. 
+	/// Retrieves an attribute certificate. To get all the attribute certificates, call <see cref="CryptMsgGetParam"/> varying dwIndex set to 0 the number of attributes minus one.
+	/// </summary>
+	public const uint CMSG_ATTR_CERT_PARAM = 32;
 
-		/// <summary>
-		/// pvData data type: pointer to DWORD. 
-		/// Returns the total count of all message recipients including key agreement and mail list recipients.
-		/// </summary>
-		CMSG_CMS_RECIPIENT_COUNT_PARAM = 33,
+	/// <summary>
+	/// pvData data type: pointer to DWORD. 
+	/// Returns the total count of all message recipients including key agreement and mail list recipients.
+	/// </summary>
+	public const uint CMSG_CMS_RECIPIENT_COUNT_PARAM = 33;
 
-		/// <summary>
-		/// pvData data type: pointer to a DWORD. 
-		/// Returns the index of the key transport, key agreement, or mail list recipient used to decrypt an ENVELOPED message.
-		/// </summary>
-		CMSG_CMS_RECIPIENT_INDEX_PARAM = 34,
+	/// <summary>
+	/// pvData data type: pointer to a DWORD. 
+	/// Returns the index of the key transport, key agreement, or mail list recipient used to decrypt an ENVELOPED message.
+	/// </summary>
+	public const uint CMSG_CMS_RECIPIENT_INDEX_PARAM = 34;
 
-		/// <summary>
-		/// pvData data type: pointer to a DWORD. 
-		/// Returns the index of the encrypted key of a key agreement recipient used to decrypt an ENVELOPED message.
-		/// </summary>
-		CMSG_CMS_RECIPIENT_ENCRYPTED_KEY_INDEX_PARAM = 35,
+	/// <summary>
+	/// pvData data type: pointer to a DWORD. 
+	/// Returns the index of the encrypted key of a key agreement recipient used to decrypt an ENVELOPED message.
+	/// </summary>
+	public const uint CMSG_CMS_RECIPIENT_ENCRYPTED_KEY_INDEX_PARAM = 35;
 
-		/// <summary>
-		/// pvData data type: pointer to a BYTE array to receive a <see cref="CMSG_CMS_RECIPIENT_INFO"/> structure.
-		/// Returns information about a key transport, key agreement, or mail list recipient. It is not limited to key transport message recipients. 
-		/// To get information on all of a message's recipients, repetitively call <see cref="CryptMsgGetParam"/>, varying dwIndex from 0 to the number of recipients minus one.
-		/// </summary>
-		CMSG_CMS_RECIPIENT_INFO_PARAM = 36,
+	/// <summary>
+	/// pvData data type: pointer to a BYTE array to receive a <see cref="CMSG_CMS_RECIPIENT_INFO"/> structure.
+	/// Returns information about a key transport, key agreement, or mail list recipient. It is not limited to key transport message recipients. 
+	/// To get information on all of a message's recipients, repetitively call <see cref="CryptMsgGetParam"/>, varying dwIndex from 0 to the number of recipients minus one.
+	/// </summary>
+	public const uint CMSG_CMS_RECIPIENT_INFO_PARAM = 36;
 
-		/// <summary>
-		/// pvData data type: pointer to a BYTE array to receive a <see cref="CMSG_ATTR"/> structure. 
-		/// Returns the unprotected attributes in an enveloped message.
-		/// </summary>
-		CMSG_UNPROTECTED_ATTR_PARAM = 37,
+	/// <summary>
+	/// pvData data type: pointer to a BYTE array to receive a <see cref="CMSG_ATTR"/> structure. 
+	/// Returns the unprotected attributes in an enveloped message.
+	/// </summary>
+	public const uint CMSG_UNPROTECTED_ATTR_PARAM = 37;
 
-		/// <summary>
-		/// pvData data type: pointer to a BYTE array to receive a CERT_ID structure.
-		/// Returns information on a message signer needed to identify the signer's public key. This could be a certificate's Issuer and SerialNumber, a KeyID, or a HashId. 
-		/// To retrieve information for all the signers, call <see cref="CryptMsgGetParam"/> varying dwIndex from 0 to the number of signers minus one.
-		/// </summary>
-		CMSG_SIGNER_CERT_ID_PARAM = 38,
+	/// <summary>
+	/// pvData data type: pointer to a BYTE array to receive a CERT_ID structure.
+	/// Returns information on a message signer needed to identify the signer's public key. This could be a certificate's Issuer and SerialNumber, a KeyID, or a HashId. 
+	/// To retrieve information for all the signers, call <see cref="CryptMsgGetParam"/> varying dwIndex from 0 to the number of signers minus one.
+	/// </summary>
+	public const uint CMSG_SIGNER_CERT_ID_PARAM = 38;
 
-		/// <summary>
-		/// pvData data type: pointer to a BYTE array to receive a <see cref="CMSG_CMS_SIGNER_INFO"/> structure.
-		/// Returns information on a message signer. This includes a signerId and authenticated and unauthenticated attributes. 
-		/// To retrieve signer information on all of the signers of a message, call <see cref="CryptMsgGetParam"/> varying dwIndex from 0 to the number of signers minus one.
-		/// </summary>
-		CMSG_CMS_SIGNER_INFO_PARAM = 39
-	}
+	/// <summary>
+	/// pvData data type: pointer to a BYTE array to receive a <see cref="CMSG_CMS_SIGNER_INFO"/> structure.
+	/// Returns information on a message signer. This includes a signerId and authenticated and unauthenticated attributes. 
+	/// To retrieve signer information on all of the signers of a message, call <see cref="CryptMsgGetParam"/> varying dwIndex from 0 to the number of signers minus one.
+	/// </summary>
+	public const uint CMSG_CMS_SIGNER_INFO_PARAM = 39;
 
 	/// <summary>
 	/// Opens a cryptographic message for decoding and returns a handle of the opened message. The message remains open until the <see cref="CryptMsgClose"/> function is called.
@@ -1739,9 +1732,9 @@ internal static class Crypt32
 	/// <remarks>https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-cryptmsgopentodecode</remarks>
 	[DllImport(Crypt32Lib, CharSet = CharSet.Unicode, SetLastError = true)]
 	public static extern nint CryptMsgOpenToDecode(
-		[In] MsgEncodingTypes dwMsgEncodingType,
-		[In] MsgFlags dwFlags,
-		[In] MsgType dwMsgType,
+		[In] uint dwMsgEncodingType,
+		[In] uint dwFlags,
+		[In] uint dwMsgType,
 		[In] nint hCryptProv,
 		[In] nint pRecipientInfo,
 		[In] nint pStreamInfo
@@ -1760,90 +1753,68 @@ internal static class Crypt32
 	/// <remarks>https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-cryptmsgopentoencode</remarks>
 	[DllImport(Crypt32Lib, CharSet = CharSet.Unicode, SetLastError = true)]
 	public static extern nint CryptMsgOpenToEncode(
-		[In] MsgEncodingTypes dwMsgEncodingType,
-		[In] MsgFlags dwFlags,
-		[In] MsgType dwMsgType,
+		[In] uint dwMsgEncodingType,
+		[In] uint dwFlags,
+		[In] uint dwMsgType,
 		[In] nint pvMsgEncodeInfo,
 		[In][MarshalAs(UnmanagedType.LPStr)] string? pszInnerContentObjID,
 		[In] nint pStreamInfo);
 
-	/// <summary>
-	/// Possible encoding types for the <see cref="CryptMsgOpenToEncode"/> and the <see cref="CryptMsgOpenToDecode"/> functions
-	/// </summary>
-	[Flags]
-	public enum MsgEncodingTypes : uint
-	{
-		X509_ASN_ENCODING = 0x00000001,
-		PKCS_7_ASN_ENCODING = 0x00010000
-	}
 
 	/// <summary>
-	/// Possible flags for the <see cref="CryptMsgOpenToEncode"/> function
+	/// The streamed output will not have an outer ContentInfo wrapper (as defined by PKCS #7). This makes it suitable to be streamed into an enclosing message.
 	/// </summary>
-	[Flags]
-	public enum MsgFlags : uint
-	{
-		/// <summary>
-		/// The streamed output will not have an outer ContentInfo wrapper (as defined by PKCS #7). This makes it suitable to be streamed into an enclosing message.
-		/// </summary>
-		CMSG_BARE_CONTENT_FLAG = 0x00000001,
-
-		/// <summary>
-		/// There is detached data being supplied for the subsequent calls to <see cref="CryptMsgUpdate"/>
-		/// </summary>
-		CMSG_DETACHED_FLAG = 0x00000004,
-
-		/// <summary>
-		/// Authenticated attributes are forced to be included in the SignerInfo (as defined by PKCS #7) in cases where they would not otherwise be required
-		/// </summary>
-		CMSG_AUTHENTICATED_ATTRIBUTES_FLAG = 0x00000008,
-
-		/// <summary>
-		/// Used when calculating the size of a message that has been encoded by using Distinguished Encoding Rules (DER) and that is nested inside an enveloped message. This is particularly useful when performing streaming
-		/// </summary>
-		CMSG_CONTENTS_OCTETS_FLAG = 0x00000010,
-
-		/// <summary>
-		/// When set, non-data type-inner content is encapsulated within an OCTET STRING. Applicable to both signed and enveloped messages
-		/// </summary>
-		CMSG_CMS_ENCAPSULATED_CONTENT_FLAG = 0x00000040,
-
-		/// <summary>
-		/// If set, the hCryptProv that is passed to this function is released on the final CryptMsgUpdate. The handle is not released if the function fails
-		/// </summary>
-		CMSG_CRYPT_RELEASE_CONTEXT_FLAG = 0x00008000
-	}
+	public const uint CMSG_BARE_CONTENT_FLAG = 0x00000001;
 
 	/// <summary>
-	/// Cryptographic message type
+	/// There is detached data being supplied for the subsequent calls to <see cref="CryptMsgUpdate"/>
 	/// </summary>
-	public enum MsgType : uint
-	{
-		/// <summary>
-		/// This value is not used
-		/// </summary>
-		CMSG_DATA = 1,
+	public const uint CMSG_DETACHED_FLAG = 0x00000004;
 
-		/// <summary>
-		/// The pvMsgEncodeInfo parameter is the address of a <see cref="CMSG_SIGNED_ENCODE_INFO"/> structure that contains the encoding information
-		/// </summary>
-		CMSG_SIGNED = 2,
+	/// <summary>
+	/// Authenticated attributes are forced to be included in the SignerInfo (as defined by PKCS #7) in cases where they would not otherwise be required
+	/// </summary>
+	public const uint CMSG_AUTHENTICATED_ATTRIBUTES_FLAG = 0x00000008;
 
-		/// <summary>
-		/// The pvMsgEncodeInfo parameter is the address of a <see cref="CMSG_ENVELOPED_ENCODE_INFO"/> structure that contains the encoding information
-		/// </summary>
-		CMSG_ENVELOPED = 3,
+	/// <summary>
+	/// Used when calculating the size of a message that has been encoded by using Distinguished Encoding Rules (DER) and that is nested inside an enveloped message. This is particularly useful when performing streaming
+	/// </summary>
+	public const uint CMSG_CONTENTS_OCTETS_FLAG = 0x00000010;
 
-		/// <summary>
-		/// This value is not currently implemented
-		/// </summary>
-		CMSG_SIGNED_AND_ENVELOPED = 4,
+	/// <summary>
+	/// When set, non-data type-inner content is encapsulated within an OCTET STRING. Applicable to both signed and enveloped messages
+	/// </summary>
+	public const uint CMSG_CMS_ENCAPSULATED_CONTENT_FLAG = 0x00000040;
 
-		/// <summary>
-		/// The pvMsgEncodeInfo parameter is the address of a <see cref="CMSG_HASHED_ENCODE_INFO"/> structure that contains the encoding information
-		/// </summary>
-		CMSG_HASHED = 5
-	}
+	/// <summary>
+	/// If set, the hCryptProv that is passed to this function is released on the final CryptMsgUpdate. The handle is not released if the function fails
+	/// </summary>
+	public const uint CMSG_CRYPT_RELEASE_CONTEXT_FLAG = 0x00008000;
+
+	/// <summary>
+	/// This value is not used
+	/// </summary>
+	public const uint CMSG_DATA = 1;
+
+	/// <summary>
+	/// The pvMsgEncodeInfo parameter is the address of a <see cref="CMSG_SIGNED_ENCODE_INFO"/> structure that contains the encoding information
+	/// </summary>
+	public const uint CMSG_SIGNED = 2;
+
+	/// <summary>
+	/// The pvMsgEncodeInfo parameter is the address of a <see cref="CMSG_ENVELOPED_ENCODE_INFO"/> structure that contains the encoding information
+	/// </summary>
+	public const uint CMSG_ENVELOPED = 3;
+
+	/// <summary>
+	/// This value is not currently implemented
+	/// </summary>
+	public const uint CMSG_SIGNED_AND_ENVELOPED = 4;
+
+	/// <summary>
+	/// The pvMsgEncodeInfo parameter is the address of a <see cref="CMSG_HASHED_ENCODE_INFO"/> structure that contains the encoding information
+	/// </summary>
+	public const uint CMSG_HASHED = 5;
 
 	/// <summary>
 	/// Adds contents to a cryptographic message

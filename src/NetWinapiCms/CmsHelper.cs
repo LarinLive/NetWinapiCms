@@ -86,8 +86,8 @@ public static class CmsHelper
 			signedInfo.rgCertEncoded = (nint)(&signerCertBlob);
 
 			// create CMS
-			var hMsg = CryptMsgOpenToEncode(MsgEncodingTypes.X509_ASN_ENCODING | MsgEncodingTypes.PKCS_7_ASN_ENCODING,
-				detachedSignature ? MsgFlags.CMSG_DETACHED_FLAG : 0, MsgType.CMSG_SIGNED, (nint)(&signedInfo), null, 0).VerifyWinapiNonzero();
+			var hMsg = CryptMsgOpenToEncode(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
+				detachedSignature ? CMSG_DETACHED_FLAG : 0, CMSG_SIGNED, (nint)(&signedInfo), null, 0).VerifyWinapiNonzero();
 			try
 			{
 				// add, hash, and sign the data
@@ -96,10 +96,10 @@ public static class CmsHelper
 
 				// extract signed CMS
 				var cmsLength = 0;
-				CryptMsgGetParam(hMsg, MsgParamType.CMSG_CONTENT_PARAM, 0, 0, ref cmsLength).VerifyWinapiTrue();
+				CryptMsgGetParam(hMsg, CMSG_CONTENT_PARAM, 0, 0, ref cmsLength).VerifyWinapiTrue();
 				var cms = new byte[cmsLength];
 				fixed (byte* pSignature = cms)
-					CryptMsgGetParam(hMsg, MsgParamType.CMSG_CONTENT_PARAM, 0, (nint)pSignature, ref cmsLength).VerifyWinapiTrue();
+					CryptMsgGetParam(hMsg, CMSG_CONTENT_PARAM, 0, (nint)pSignature, ref cmsLength).VerifyWinapiTrue();
 				return cms;
 			}
 			finally
@@ -122,13 +122,13 @@ public static class CmsHelper
 		// extract CERT_ID
 		nint pCertContext = 0;
 		var certIdLength = 0;
-		CryptMsgGetParam(hMsg, MsgParamType.CMSG_SIGNER_CERT_ID_PARAM, signerIndex, 0, ref certIdLength).VerifyWinapiTrue();
+		CryptMsgGetParam(hMsg, CMSG_SIGNER_CERT_ID_PARAM, signerIndex, 0, ref certIdLength).VerifyWinapiTrue();
 		var certIdRaw = ArrayPool<byte>.Shared.Rent(certIdLength);
 		try
 		{
 			fixed (byte* pCertId = certIdRaw)
 			{
-				CryptMsgGetParam(hMsg, MsgParamType.CMSG_SIGNER_CERT_ID_PARAM, 0, (nint)pCertId, ref certIdLength).VerifyWinapiTrue();
+				CryptMsgGetParam(hMsg, CMSG_SIGNER_CERT_ID_PARAM, 0, (nint)pCertId, ref certIdLength).VerifyWinapiTrue();
 				pCertContext = CertFindCertificateInStore(hCertStore, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
 					0, CERT_FIND_CERT_ID, (nint)pCertId, 0);
 				if (pCertContext == 0)
@@ -152,7 +152,7 @@ public static class CmsHelper
 		vsp.dwSignerIndex = signerIndex;
 		vsp.dwSignerType = CMSG_VERIFY_SIGNER_CERT;
 		vsp.pvSigner = pCertContext;
-		CryptMsgControl(hMsg, 0, MsgControlType.CMSG_CTRL_VERIFY_SIGNATURE_EX, (nint)(&vsp)).VerifyWinapiTrue();
+		CryptMsgControl(hMsg, 0, CMSG_CTRL_VERIFY_SIGNATURE_EX, (nint)(&vsp)).VerifyWinapiTrue();
 
 		// verify certificates
 		if (verifyCertificates)
@@ -193,8 +193,8 @@ public static class CmsHelper
 		if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 			throw new PlatformNotSupportedException();
 
-		var hMsg = CryptMsgOpenToDecode(MsgEncodingTypes.X509_ASN_ENCODING | MsgEncodingTypes.PKCS_7_ASN_ENCODING,
-			detachedSignature ? MsgFlags.CMSG_DETACHED_FLAG : 0, 0, 0, 0, 0).VerifyWinapiNonzero();
+		var hMsg = CryptMsgOpenToDecode(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, detachedSignature ? CMSG_DETACHED_FLAG : 0U, 0, 0, 0, 0)
+			.VerifyWinapiNonzero();
 		try
 		{
 			// load signed CMS
@@ -216,7 +216,7 @@ public static class CmsHelper
 				// determine signer count
 				var signerCount = 0U;
 				var signerCountSize = Marshal.SizeOf(signerCount);
-				CryptMsgGetParam(hMsg, MsgParamType.CMSG_SIGNER_COUNT_PARAM, 0, (nint)(&signerCount), ref signerCountSize).VerifyWinapiTrue();
+				CryptMsgGetParam(hMsg, CMSG_SIGNER_COUNT_PARAM, 0, (nint)(&signerCount), ref signerCountSize).VerifyWinapiTrue();
 				if (signerCount == 0)
 					throw new Win32Exception(CRYPT_E_NO_SIGNER);
 
