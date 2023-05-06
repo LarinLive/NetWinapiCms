@@ -162,7 +162,7 @@ public static class CmsHelper
 			chainParams.cbSize = (uint)Marshal.SizeOf(chainParams);
 			try
 			{
-				CertGetCertificateChain(HCCE_CURRENT_USER, pCertContext, 0, 0, (nint)(&chainParams), chainFlags,
+				CertGetCertificateChain(HCCE_CURRENT_USER, pCertContext, 0, hCertStore, (nint)(&chainParams), chainFlags,
 					0, (nint)(&pChainContext)).VerifyWinapiTrue();
 			}
 			finally
@@ -210,7 +210,7 @@ public static class CmsHelper
 					throw new ArgumentException("The data must be specified for verifying a detached signature.", nameof(data));
 			}
 			// extract all included certificates from the CMS as cert store
-			var hCertStore = CertOpenStore(1, 0, 0, 0, hMsg).VerifyWinapiNonzero();
+			var hCertStore = CertOpenStore(CERT_STORE_PROV_MSG, 0, 0, 0, hMsg).VerifyWinapiNonzero();
 			try
 			{
 				// determine signer count

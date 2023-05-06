@@ -737,6 +737,8 @@ internal static class Crypt32
 		[In] nint pvPara
 	);
 
+	public const nint CERT_STORE_PROV_MSG = 1;
+
 	/// <summary>
 	/// Contains information used to verify a message signature. It contains the signer index and signer public key. The signer public key can be the signer's <see cref="CERT_PUBLIC_KEY_INFO"/> structure, certificate context, or chain context.
 	/// </summary>
@@ -1492,15 +1494,10 @@ internal static class Crypt32
 
 
 	/// <summary>
-	/// Possible dwParamType values for the <see cref="CryptMsgGetParam"/> function
+	/// pvData data type: pointer to a DWORD. 
+	/// Returns the message type of a decoded message of unknown type. The retrieved message type can be compared to supported types to determine whether processing can continued
 	/// </summary>
-	public enum MsgParamType : uint
-	{
-		/// <summary>
-		/// pvData data type: pointer to a DWORD. 
-		/// Returns the message type of a decoded message of unknown type. The retrieved message type can be compared to supported types to determine whether processing can continued
-		/// </summary>
-		public const uint CMSG_TYPE_PARAM = 1;
+	public const uint CMSG_TYPE_PARAM = 1;
 
 	/// <summary>
 	/// pvData data type: pointer to a BYTE array.
