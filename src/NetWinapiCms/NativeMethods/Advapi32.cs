@@ -27,94 +27,88 @@ internal static class Advapi32
 	[DllImport(Advapi32Lib, CharSet = CharSet.Unicode, SetLastError = true)]
 	public static extern bool CryptSetProvParam(
 		[In] nint hProv,
-		[In] SettableCryptProvParameter dwParam,
+		[In] uint dwParam,
 		[In] nint pvData,
 		[In] uint dwFlags
 	);
 
 	/// <summary>
-	/// Values for the CryptSetProvParam.dwParam parameter
+	/// Set the window handle that the provider uses as the parent of any dialog boxes it creates. pbData contains a pointer to an HWND that contains the parent window handle.
+	/// This parameter must be set before calling CryptAcquireContext because many CSPs will display a user interface when CryptAcquireContext is called. 
+	/// You can pass NULL for the hProv parameter to set this window handle for all cryptographic contexts subsequently acquired within this process.
 	/// </summary>
-	public enum SettableCryptProvParameter : uint
-	{
-		/// <summary>
-		/// Set the window handle that the provider uses as the parent of any dialog boxes it creates. pbData contains a pointer to an HWND that contains the parent window handle.
-		/// This parameter must be set before calling CryptAcquireContext because many CSPs will display a user interface when CryptAcquireContext is called. 
-		/// You can pass NULL for the hProv parameter to set this window handle for all cryptographic contexts subsequently acquired within this process.
-		/// </summary>
-		PP_CLIENT_HWND = 1,
+	public const uint PP_CLIENT_HWND = 1;
 
-		/// <summary>
-		/// Sets the security descriptor on the key storage container. The pbData parameter is the address of a SECURITY_DESCRIPTOR structure that contains the new security descriptor for the key storage container.
-		/// </summary>
-		PP_KEYSET_SEC_DESCR = 8,
+	/// <summary>
+	/// Sets the security descriptor on the key storage container. The pbData parameter is the address of a SECURITY_DESCRIPTOR structure that contains the new security descriptor for the key storage container.
+	/// </summary>
+	public const uint PP_KEYSET_SEC_DESCR = 8;
 
-		/// <summary>
-		/// For a smart card provider, sets the search string that is displayed to the user as a prompt to insert the smart card. 
-		/// This string is passed as the lpstrSearchDesc member of the OPENCARDNAME_EX structure that is passed to the SCardUIDlgSelectCard function. 
-		/// This string is used for the lifetime of the calling process. The pbData parameter is a pointer to a null-terminated Unicode string.
-		/// </summary>
-		PP_UI_PROMPT = 21,
+	/// <summary>
+	/// For a smart card provider, sets the search string that is displayed to the user as a prompt to insert the smart card. 
+	/// This string is passed as the lpstrSearchDesc member of the OPENCARDNAME_EX structure that is passed to the SCardUIDlgSelectCard function. 
+	/// This string is used for the lifetime of the calling process. The pbData parameter is a pointer to a null-terminated Unicode string.
+	/// </summary>
+	public const uint PP_UI_PROMPT = 21;
 
-		/// <summary>
-		/// Delete the ephemeral key associated with a hash, encryption, or verification context. This will free memory and clear registry settings associated with the key.
-		/// </summary>
-		PP_DELETEKEY = 24,
+	/// <summary>
+	/// Delete the ephemeral key associated with a hash, encryption, or verification context. This will free memory and clear registry settings associated with the key.
+	/// </summary>
+	public const uint PP_DELETEKEY = 24;
 
-		/// <summary>
-		/// Specifies that the key exchange PIN is contained in pbData. The PIN is represented as a null-terminated ASCII string.
-		/// </summary>
-		PP_KEYEXCHANGE_PIN = 32,
+	/// <summary>
+	/// Specifies that the key exchange PIN is contained in pbData. The PIN is represented as a null-terminated ASCII string.
+	/// </summary>
+	public const uint PP_KEYEXCHANGE_PIN = 32;
 
-		/// <summary>
-		/// Specifies the signature PIN. The pbData parameter is a null-terminated ASCII string that represents the PIN.
-		/// </summary>
-		PP_SIGNATURE_PIN = 33,
+	/// <summary>
+	/// Specifies the signature PIN. The pbData parameter is a null-terminated ASCII string that represents the PIN.
+	/// </summary>
+	public const uint PP_SIGNATURE_PIN = 33;
 
-		/// <summary>
-		/// Specifies that the CSP must exclusively use the hardware random number generator (RNG). When PP_USE_HARDWARE_RNG is set, random values are taken exclusively from the hardware RNG and no other sources are used. 
-		/// If a hardware RNG is supported by the CSP and it can be exclusively used, the function succeeds and returns TRUE; otherwise, the function fails and returns FALSE. 
-		/// The pbData parameter must be NULL and dwFlags must be zero when using this value.
-		/// </summary>
-		PP_USE_HARDWARE_RNG = 38,
+	/// <summary>
+	/// Specifies that the CSP must exclusively use the hardware random number generator (RNG). When PP_USE_HARDWARE_RNG is set, random values are taken exclusively from the hardware RNG and no other sources are used. 
+	/// If a hardware RNG is supported by the CSP and it can be exclusively used, the function succeeds and returns TRUE; otherwise, the function fails and returns FALSE. 
+	/// The pbData parameter must be NULL and dwFlags must be zero when using this value.
+	/// </summary>
+	public const uint PP_USE_HARDWARE_RNG = 38;
 
-		/// <summary>
-		/// Specifies the user certificate store for the smart card. This certificate store contains all of the user certificates that are stored on the smart card. 
-		/// The certificates in this store are encoded by using PKCS_7_ASN_ENCODING or X509_ASN_ENCODING encoding and should contain the CERT_KEY_PROV_INFO_PROP_ID property.		
-		/// The pbData parameter is an HCERTSTORE variable that receives the handle of an in-memory certificate store. When this handle is no longer needed, the caller must close it by using the CertCloseStore function.
-		/// </summary>
-		PP_USER_CERTSTORE = 42,
+	/// <summary>
+	/// Specifies the user certificate store for the smart card. This certificate store contains all of the user certificates that are stored on the smart card. 
+	/// The certificates in this store are encoded by using PKCS_7_ASN_ENCODING or X509_ASN_ENCODING encoding and should contain the CERT_KEY_PROV_INFO_PROP_ID property.		
+	/// The pbData parameter is an HCERTSTORE variable that receives the handle of an in-memory certificate store. When this handle is no longer needed, the caller must close it by using the CertCloseStore function.
+	/// </summary>
+	public const uint PP_USER_CERTSTORE = 42;
 
-		/// <summary>
-		/// Specifies the name of the smart card reader. The pbData parameter is the address of an ANSI character array that contains a null-terminated ANSI string that contains the name of the smart card reader.
-		/// </summary>
-		PP_SMARTCARD_READER = 43,
+	/// <summary>
+	/// Specifies the name of the smart card reader. The pbData parameter is the address of an ANSI character array that contains a null-terminated ANSI string that contains the name of the smart card reader.
+	/// </summary>
+	public const uint PP_SMARTCARD_READER = 43;
 
-		/// <summary>
-		/// Sets an alternate prompt string to display to the user when the user's PIN is requested. The pbData parameter is a pointer to a null-terminated Unicode string.
-		/// </summary>
-		PP_PIN_PROMPT_STRING = 44,
+	/// <summary>
+	/// Sets an alternate prompt string to display to the user when the user's PIN is requested. The pbData parameter is a pointer to a null-terminated Unicode string.
+	/// </summary>
+	public const uint PP_PIN_PROMPT_STRING = 44;
 
-		/// <summary>
-		/// Specifies the identifier of the smart card. The pbData parameter is the address of a GUID structure that contains the identifier of the smart card.
-		/// </summary>
-		PP_SMARTCARD_GUID = 45,
+	/// <summary>
+	/// Specifies the identifier of the smart card. The pbData parameter is the address of a GUID structure that contains the identifier of the smart card.
+	/// </summary>
+	public const uint PP_SMARTCARD_GUID = 45;
 
-		/// <summary>
-		/// Sets the root certificate store for the smart card. The provider will copy the root certificates from this store onto the smart card.
-		/// The pbData parameter is an HCERTSTORE variable that contains the handle of the new certificate store. 
-		/// The provider will copy the certificates from the store during this call, so it is safe to close this store after this function is called.
-		/// </summary>
-		PP_ROOT_CERTSTORE = 46,
+	/// <summary>
+	/// Sets the root certificate store for the smart card. The provider will copy the root certificates from this store onto the smart card.
+	/// The pbData parameter is an HCERTSTORE variable that contains the handle of the new certificate store. 
+	/// The provider will copy the certificates from the store during this call, so it is safe to close this store after this function is called.
+	/// </summary>
+	public const uint PP_ROOT_CERTSTORE = 46;
 
-		/// <summary>
-		/// Specifies that an encrypted key exchange PIN is contained in pbData. The pbData parameter contains a <see cref="CRYPT_INTEGER_BLOB"/>.
-		/// </summary>
-		PP_SECURE_KEYEXCHANGE_PIN = 47,
+	/// <summary>
+	/// Specifies that an encrypted key exchange PIN is contained in pbData. The pbData parameter contains a <see cref="CRYPT_INTEGER_BLOB"/>.
+	/// </summary>
+	public const uint PP_SECURE_KEYEXCHANGE_PIN = 47;
 
-		/// <summary>
-		/// pecifies that an encrypted signature PIN is contained in pbData. The pbData parameter contains a <see cref="CRYPT_INTEGER_BLOB"/>.
-		/// </summary>
-		PP_SECURE_SIGNATURE_PIN = 48
-	}
+	/// <summary>
+	/// pecifies that an encrypted signature PIN is contained in pbData. The pbData parameter contains a <see cref="CRYPT_INTEGER_BLOB"/>.
+	/// </summary>
+	public const uint PP_SECURE_SIGNATURE_PIN = 48;
 }

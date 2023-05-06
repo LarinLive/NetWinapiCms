@@ -1274,7 +1274,7 @@ internal static class Crypt32
 	[DllImport(Crypt32Lib, CharSet = CharSet.Unicode, SetLastError = true)]
 	public static extern bool CryptAcquireCertificatePrivateKey(
 		[In] nint pCert,
-		[In] AcquiringFlags dwFlags,
+		[In] uint dwFlags,
 		[In] nint pvParameters,
 		out nint phCryptProvOrNCryptKey,
 		out uint pdwKeySpec,
@@ -1282,59 +1282,53 @@ internal static class Crypt32
 	);
 
 	/// <summary>
-	/// Values for the CryptAcquireCertificatePrivateKey.dwFlags parameter
+	/// If a handle is already acquired and cached, that same handle is returned. Otherwise, a new handle is acquired and cached by using the certificate's CERT_KEY_CONTEXT_PROP_ID property. 
+	/// When this flag is set, the pfCallerFreeProvOrNCryptKey parameter receives FALSE and the calling application must not release the handle. 
+	/// The handle is freed when the certificate context is freed; however, you must retain the certificate context referenced by the pCert parameter as long as the key is in use, otherwise operations that rely on the key will fail.
 	/// </summary>
-	[Flags]
-	public enum AcquiringFlags : uint
-	{
-		/// <summary>
-		/// If a handle is already acquired and cached, that same handle is returned. Otherwise, a new handle is acquired and cached by using the certificate's CERT_KEY_CONTEXT_PROP_ID property. 
-		/// When this flag is set, the pfCallerFreeProvOrNCryptKey parameter receives FALSE and the calling application must not release the handle. 
-		/// The handle is freed when the certificate context is freed; however, you must retain the certificate context referenced by the pCert parameter as long as the key is in use, otherwise operations that rely on the key will fail.
-		/// </summary>
-		CRYPT_ACQUIRE_CACHE_FLAG = 0x00000001,
+	public const uint CRYPT_ACQUIRE_CACHE_FLAG = 0x00000001;
 
-		/// <summary>
-		/// Uses the certificate's CERT_KEY_PROV_INFO_PROP_ID property to determine whether caching should be accomplished. For more information about the CERT_KEY_PROV_INFO_PROP_ID property, see CertSetCertificateContextProperty. 
-		/// This function will only use caching if during a previous call, the dwFlags member of the CRYPT_KEY_PROV_INFO structure contained CERT_SET_KEY_CONTEXT_PROP.
-		/// </summary>
-		CRYPT_ACQUIRE_USE_PROV_INFO_FLAG = 0x00000002,
+	/// <summary>
+	/// Uses the certificate's CERT_KEY_PROV_INFO_PROP_ID property to determine whether caching should be accomplished. For more information about the CERT_KEY_PROV_INFO_PROP_ID property, see CertSetCertificateContextProperty. 
+	/// This function will only use caching if during a previous call, the dwFlags member of the CRYPT_KEY_PROV_INFO structure contained CERT_SET_KEY_CONTEXT_PROP.
+	/// </summary>
+	public const uint CRYPT_ACQUIRE_USE_PROV_INFO_FLAG = 0x00000002;
 
-		/// <summary>
-		/// The public key in the certificate is compared with the public key returned by the cryptographic service provider (CSP). If the keys do not match, the acquisition operation fails and the last error code is set to NTE_BAD_PUBLIC_KEY. 
-		/// If a cached handle is returned, no comparison is made.
-		/// </summary>
-		CRYPT_ACQUIRE_COMPARE_KEY_FLAG = 0x00000004,
+	/// <summary>
+	/// The public key in the certificate is compared with the public key returned by the cryptographic service provider (CSP). If the keys do not match, the acquisition operation fails and the last error code is set to NTE_BAD_PUBLIC_KEY. 
+	/// If a cached handle is returned, no comparison is made.
+	/// </summary>
+	public const uint CRYPT_ACQUIRE_COMPARE_KEY_FLAG = 0x00000004;
 
-		/// <summary>
-		/// The CSP should not display any user interface (UI) for this context. If the CSP must display UI to operate, the call fails and the NTE_SILENT_CONTEXT error code is set as the last error.
-		/// </summary>
-		CRYPT_ACQUIRE_SILENT_FLAG = 0x00000040,
+	/// <summary>
+	/// The CSP should not display any user interface (UI) for this context. If the CSP must display UI to operate, the call fails and the NTE_SILENT_CONTEXT error code is set as the last error.
+	/// </summary>
+	public const uint CRYPT_ACQUIRE_SILENT_FLAG = 0x00000040;
 
-		/// <summary>
-		/// Any UI that is needed by the CSP or KSP will be a child of the HWND that is supplied in the pvParameters parameter. For a CSP key, using this flag will cause the CryptSetProvParam function with the flag PP_CLIENT_HWND using this HWND to be called with NULL for HCRYPTPROV. For a KSP key, using this flag will cause the NCryptSetProperty function with the NCRYPT_WINDOW_HANDLE_PROPERTY flag to be called using the HWND.
-		/// Do not use this flag with CRYPT_ACQUIRE_SILENT_FLAG.
-		/// </summary>
-		CRYPT_ACQUIRE_WINDOWS_HANDLE_FLAG = 0x00000080,
+	/// <summary>
+	/// Any UI that is needed by the CSP or KSP will be a child of the HWND that is supplied in the pvParameters parameter. For a CSP key, using this flag will cause the CryptSetProvParam function with the flag PP_CLIENT_HWND using this HWND to be called with NULL for HCRYPTPROV. For a KSP key, using this flag will cause the NCryptSetProperty function with the NCRYPT_WINDOW_HANDLE_PROPERTY flag to be called using the HWND.
+	/// Do not use this flag with CRYPT_ACQUIRE_SILENT_FLAG.
+	/// </summary>
+	public const uint CRYPT_ACQUIRE_WINDOWS_HANDLE_FLAG = 0x00000080;
 
-		/// <summary>
-		/// This function will attempt to obtain the key by using CryptoAPI. If that fails, this function will attempt to obtain the key by using the Cryptography API: Next Generation (CNG). 
-		/// The pdwKeySpec variable receives the CERT_NCRYPT_KEY_SPEC flag if CNG is used to obtain the key.
-		/// </summary>
-		CRYPT_ACQUIRE_ALLOW_NCRYPT_KEY_FLAG = 0x00010000,
+	/// <summary>
+	/// This function will attempt to obtain the key by using CryptoAPI. If that fails, this function will attempt to obtain the key by using the Cryptography API: Next Generation (CNG). 
+	/// The pdwKeySpec variable receives the CERT_NCRYPT_KEY_SPEC flag if CNG is used to obtain the key.
+	/// </summary>
+	public const uint CRYPT_ACQUIRE_ALLOW_NCRYPT_KEY_FLAG = 0x00010000;
 
-		/// <summary>
-		/// This function will only attempt to obtain the key by using CNG and will not use CryptoAPI to obtain the key.
-		/// The pdwKeySpec variable receives the CERT_NCRYPT_KEY_SPEC flag if CNG is used to obtain the key.
-		/// </summary>
-		CRYPT_ACQUIRE_PREFER_NCRYPT_KEY_FLAG = 0x00020000,
+	/// <summary>
+	/// This function will only attempt to obtain the key by using CNG and will not use CryptoAPI to obtain the key.
+	/// The pdwKeySpec variable receives the CERT_NCRYPT_KEY_SPEC flag if CNG is used to obtain the key.
+	/// </summary>
+	public const uint CRYPT_ACQUIRE_PREFER_NCRYPT_KEY_FLAG = 0x00020000;
 
-		/// <summary>
-		/// This function will attempt to obtain the key by using CNG. If that fails, this function will attempt to obtain the key by using CryptoAPI. 
-		/// The pdwKeySpec variable receives the CERT_NCRYPT_KEY_SPEC flag if CNG is used to obtain the key.
-		/// </summary>
-		CRYPT_ACQUIRE_ONLY_NCRYPT_KEY_FLAG = 0x00040000
-	}
+	/// <summary>
+	/// This function will attempt to obtain the key by using CNG. If that fails, this function will attempt to obtain the key by using CryptoAPI. 
+	/// The pdwKeySpec variable receives the CERT_NCRYPT_KEY_SPEC flag if CNG is used to obtain the key.
+	/// </summary>
+	public const uint CRYPT_ACQUIRE_ONLY_NCRYPT_KEY_FLAG = 0x00040000;
+
 
 	public const uint AT_KEYEXCHANGE = 1;
 	public const uint AT_SIGNATURE = 2;

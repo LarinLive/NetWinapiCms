@@ -52,7 +52,7 @@ public static class CmsHelper
 		};
 
 		// acquire certificate private key
-		var flags = (silent ? AcquiringFlags.CRYPT_ACQUIRE_SILENT_FLAG : 0) | AcquiringFlags.CRYPT_ACQUIRE_COMPARE_KEY_FLAG;
+		var flags = (silent ? CRYPT_ACQUIRE_SILENT_FLAG : 0U) | CRYPT_ACQUIRE_COMPARE_KEY_FLAG;
 		CryptAcquireCertificatePrivateKey(certificate.Handle, flags, 0,
 			out var hProvider, out var dwKeySpec, out var pfCallerFreeProv).VerifyWinapiTrue();
 		try
@@ -64,9 +64,9 @@ public static class CmsHelper
 				var asciiPin = stackalloc byte[asciiPinLength + 1];
 				Encoding.ASCII.GetBytes(pin, new Span<byte>(asciiPin, asciiPinLength));
 				if (dwKeySpec == AT_KEYEXCHANGE)
-					CryptSetProvParam(hProvider, SettableCryptProvParameter.PP_KEYEXCHANGE_PIN, (nint)asciiPin, 0).VerifyWinapiTrue();
+					CryptSetProvParam(hProvider, PP_KEYEXCHANGE_PIN, (nint)asciiPin, 0).VerifyWinapiTrue();
 				else if (dwKeySpec == AT_SIGNATURE)
-					CryptSetProvParam(hProvider, SettableCryptProvParameter.PP_SIGNATURE_PIN, (nint)asciiPin, 0).VerifyWinapiTrue();
+					CryptSetProvParam(hProvider, PP_SIGNATURE_PIN, (nint)asciiPin, 0).VerifyWinapiTrue();
 			}
 
 			// prepare CMSG_SIGNER_ENCODE_INFO structure
