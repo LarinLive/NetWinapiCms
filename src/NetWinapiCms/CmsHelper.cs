@@ -77,36 +77,34 @@ public static class CmsHelper
 			signerInfo.dwKeySpec = dwKeySpec;
 			signerInfo.HashAlgorithm.pszObjId = (nint)digestOidRaw;
 
-			fixed (byte* pData = data)
-			{
-				// prepare CMSG_SIGNED_ENCODE_INFO structure
-				var signedInfo = new CMSG_SIGNED_ENCODE_INFO();
-				signedInfo.cbSize = (uint)Marshal.SizeOf(signedInfo);
-				signedInfo.cSigners = 1;
-				signedInfo.rgSigners = (nint)(&signerInfo);
-				signedInfo.cCertEncoded = 1;
-				signedInfo.rgCertEncoded = (nint)(&signerCertBlob);
+			// prepare CMSG_SIGNED_ENCODE_INFO structure
+			var signedInfo = new CMSG_SIGNED_ENCODE_INFO();
+			signedInfo.cbSize = (uint)Marshal.SizeOf(signedInfo);
+			signedInfo.cSigners = 1;
+			signedInfo.rgSigners = (nint)(&signerInfo);
+			signedInfo.cCertEncoded = 1;
+			signedInfo.rgCertEncoded = (nint)(&signerCertBlob);
 
-				// create CMS
-				var hMsg = CryptMsgOpenToEncode(MsgEncodingTypes.X509_ASN_ENCODING | MsgEncodingTypes.PKCS_7_ASN_ENCODING,
-					detachedSignature ? MsgFlags.CMSG_DETACHED_FLAG : 0, MsgType.CMSG_SIGNED, (nint)(&signedInfo), null, 0).VerifyWinapiNonzero();
-				try
-				{
-					// add, hash, and sign the data
+			// create CMS
+			var hMsg = CryptMsgOpenToEncode(MsgEncodingTypes.X509_ASN_ENCODING | MsgEncodingTypes.PKCS_7_ASN_ENCODING,
+				detachedSignature ? MsgFlags.CMSG_DETACHED_FLAG : 0, MsgType.CMSG_SIGNED, (nint)(&signedInfo), null, 0).VerifyWinapiNonzero();
+			try
+			{
+				// add, hash, and sign the data
+				fixed (byte* pData = data)
 					CryptMsgUpdate(hMsg, (nint)pData, (uint)data.Length, true).VerifyWinapiTrue();
 
-					// extract signed CMS
-					var cmsLength = 0;
-					CryptMsgGetParam(hMsg, MsgParamType.CMSG_CONTENT_PARAM, 0, 0, ref cmsLength).VerifyWinapiTrue();
-					var cms = new byte[cmsLength];
-					fixed (byte* pSignature = cms)
-						CryptMsgGetParam(hMsg, MsgParamType.CMSG_CONTENT_PARAM, 0, (nint)pSignature, ref cmsLength).VerifyWinapiTrue();
-					return cms;
-				}
-				finally
-				{
-					CryptMsgClose(hMsg);
-				}
+				// extract signed CMS
+				var cmsLength = 0;
+				CryptMsgGetParam(hMsg, MsgParamType.CMSG_CONTENT_PARAM, 0, 0, ref cmsLength).VerifyWinapiTrue();
+				var cms = new byte[cmsLength];
+				fixed (byte* pSignature = cms)
+					CryptMsgGetParam(hMsg, MsgParamType.CMSG_CONTENT_PARAM, 0, (nint)pSignature, ref cmsLength).VerifyWinapiTrue();
+				return cms;
+			}
+			finally
+			{
+				CryptMsgClose(hMsg);
 			}
 		}
 		finally
