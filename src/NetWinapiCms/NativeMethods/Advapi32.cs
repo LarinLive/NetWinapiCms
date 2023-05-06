@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace NetWinapiCms.NativeMethods;
 
@@ -24,6 +25,15 @@ internal static class Advapi32
 	);
 
 
+	/// <summary>
+	/// Customizes the operations of a cryptographic service provider (CSP). This function is commonly used to set a security descriptor on the key container associated with a CSP to control access to the private keys in that key container.
+	/// </summary>
+	/// <param name="hProv">The handle of a CSP for which to set values. </param>
+	/// <param name="dwParam">Specifies the parameter to set.</param>
+	/// <param name="pvData">A pointer to a data buffer that contains the value to be set as a provider parameter. The form of this data varies depending on the dwParam value.</param>
+	/// <param name="dwFlags">If dwParam contains PP_KEYSET_SEC_DESCR, dwFlags contains the SECURITY_INFORMATION applicable bit flags, as defined in the Platform SDK.</param>
+	/// <returns>If the function succeeds, the return value is nonzero (TRUE). If the function fails, the return value is zero (FALSE). For extended error information, call GetLastError.</returns>
+	/// <remarks>https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-cryptsetprovparam</remarks>
 	[DllImport(Advapi32Lib, CharSet = CharSet.Unicode, SetLastError = true)]
 	public static extern bool CryptSetProvParam(
 		[In] nint hProv,
