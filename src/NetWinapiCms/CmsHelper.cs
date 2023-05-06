@@ -188,7 +188,7 @@ public static class CmsHelper
 	/// <exception cref="PlatformNotSupportedException"></exception>
 	/// <exception cref="ArgumentException"></exception>
 	/// <exception cref="Win32Exception"></exception>
-	public static unsafe void VerifySignature(ReadOnlySpan<byte> cms, bool detachedSignature, ReadOnlySpan<byte> data,
+	public static unsafe void Verify(ReadOnlySpan<byte> cms, bool detachedSignature, ReadOnlySpan<byte> data,
 		bool verifyCertificates = false, X509RevocationMode revocationMode = X509RevocationMode.Online,
 		X509RevocationFlag revocationFlag = X509RevocationFlag.ExcludeRoot)
 	{
