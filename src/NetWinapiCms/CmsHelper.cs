@@ -19,6 +19,19 @@ namespace NetWinapiCms;
 [SupportedOSPlatform("WINDOWS")]
 public static class CmsHelper
 {
+	/// <summary>
+	/// Signs a data with a provided certificate
+	/// </summary>
+	/// <param name="data">Data to be signed</param>
+	/// <param name="detachedSignature">A flag of the detached signature</param>
+	/// <param name="certificate">A signing certificate</param>
+	/// <param name="digestOid">A data hash algorithm OID</param>
+	/// <param name="silent">A flag of the silent cryptographic provider context</param>
+	/// <param name="pin">A PIN-code for the private key</param>
+	/// <returns>Signed CMS</returns>
+	/// <exception cref="PlatformNotSupportedException"></exception>
+	/// <exception cref="ArgumentException"></exception>
+	/// <exception cref="Win32Exception"></exception>
 	public static unsafe byte[] Sign(ReadOnlySpan<byte> data, bool detachedSignature, X509Certificate2 certificate,
 			Oid digestOid, bool silent, ReadOnlySpan<char> pin)
 	{
@@ -29,6 +42,14 @@ public static class CmsHelper
 		var digestOidLength = Encoding.ASCII.GetByteCount(digestOid.Value ?? throw new ArgumentException("Disget OID is undefined", nameof(digestOid)));
 		var digestOidRaw = stackalloc byte[digestOidLength + 1];
 		Encoding.ASCII.GetBytes(pin, new Span<byte>(digestOidRaw, digestOidLength));
+
+		// acquiring certificate context
+		var certContext = new ReadOnlySpan<CERT_CONTEXT>(certificate.Handle.ToPointer(), 1);
+		var signerCertBlob = new CRYPT_INTEGER_BLOB
+		{
+			cbData = certContext[0].cbCertEncoded,
+			pbData = certContext[0].pbCertEncoded
+		};
 
 		// acquire certificate private key
 		var flags = (silent ? AcquiringFlags.CRYPT_ACQUIRE_SILENT_FLAG : 0) | AcquiringFlags.CRYPT_ACQUIRE_COMPARE_KEY_FLAG;
@@ -47,14 +68,6 @@ public static class CmsHelper
 				else if (dwKeySpec == AT_SIGNATURE)
 					CryptSetProvParam(hProvider, SettableCryptProvParameter.PP_SIGNATURE_PIN, (nint)asciiPin, 0).VerifyWinapiTrue();
 			}
-
-			// acquiring certificate context
-			var certContext = new ReadOnlySpan<CERT_CONTEXT>(certificate.Handle.ToPointer(), 1);
-			var signerCertBlob = new CRYPT_INTEGER_BLOB
-			{
-				cbData = certContext[0].cbCertEncoded,
-				pbData = certContext[0].pbCertEncoded
-			};
 
 			// prepare CMSG_SIGNER_ENCODE_INFO structure
 			var signerInfo = new CMSG_SIGNER_ENCODE_INFO();
@@ -106,6 +119,75 @@ public static class CmsHelper
 		}
 	}
 
+	private static unsafe void VerifyOneSigner(nint hMsg, nint hCertStore, uint signerIndex, bool verifyCertificates, uint chainFlags)
+	{
+		// extract CERT_ID
+		nint pCertContext = 0;
+		var certIdLength = 0;
+		CryptMsgGetParam(hMsg, MsgParamType.CMSG_SIGNER_CERT_ID_PARAM, signerIndex, 0, ref certIdLength).VerifyWinapiTrue();
+		var certIdRaw = ArrayPool<byte>.Shared.Rent(certIdLength);
+		try
+		{
+			fixed (byte* pCertId = certIdRaw)
+			{
+				CryptMsgGetParam(hMsg, MsgParamType.CMSG_SIGNER_CERT_ID_PARAM, 0, (nint)pCertId, ref certIdLength).VerifyWinapiTrue();
+				pCertContext = CertFindCertificateInStore(hCertStore, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
+					0, CERT_FIND_CERT_ID, (nint)pCertId, 0);
+				if (pCertContext == 0)
+				{
+					var error = Marshal.GetLastWin32Error();
+					if (error == CRYPT_E_NOT_FOUND)
+						throw new Win32Exception(CRYPT_E_SIGNER_NOT_FOUND);
+					else
+						throw new Win32Exception(error);
+				}
+			}
+		}
+		finally
+		{
+			ArrayPool<byte>.Shared.Return(certIdRaw, true);
+		}
+
+		// validate signature
+		var vsp = new CMSG_CTRL_VERIFY_SIGNATURE_EX_PARA();
+		vsp.cbSize = (uint)Marshal.SizeOf(vsp);
+		vsp.dwSignerIndex = signerIndex;
+		vsp.dwSignerType = CMSG_VERIFY_SIGNER_CERT;
+		vsp.pvSigner = pCertContext;
+		CryptMsgControl(hMsg, 0, MsgControlType.CMSG_CTRL_VERIFY_SIGNATURE_EX, (nint)(&vsp)).VerifyWinapiTrue();
+
+		// verify certificates
+		if (verifyCertificates)
+		{
+			nint pChainContext = 0;
+			var chainParams = new CERT_CHAIN_PARA();
+			chainParams.cbSize = (uint)Marshal.SizeOf(chainParams);
+			try
+			{
+				CertGetCertificateChain(HCCE_CURRENT_USER, pCertContext, 0, 0, (nint)(&chainParams), chainFlags,
+					0, (nint)(&pChainContext)).VerifyWinapiTrue();
+			}
+			finally
+			{
+				if (pChainContext != 0)
+					CertFreeCertificateChain(pChainContext);
+			}
+		}
+
+	}
+
+	/// <summary>
+	/// Verifies all signatures in a CMS
+	/// </summary>
+	/// <param name="cms">A CMS whose signatures should be verified</param>
+	/// <param name="detachedSignature">A flag of the detached signature</param>
+	/// <param name="data">Source data</param>
+	/// <param name="verifyCertificates">If true also verifies certificates themselves</param>
+	/// <param name="revocationMode">A X509 certificate revocation checking mode</param>
+	/// <param name="revocationFlag">A X509 certificate revocation checking flag</param>
+	/// <exception cref="PlatformNotSupportedException"></exception>
+	/// <exception cref="ArgumentException"></exception>
+	/// <exception cref="Win32Exception"></exception>
 	public static unsafe void VerifySignature(ReadOnlySpan<byte> cms, bool detachedSignature, ReadOnlySpan<byte> data,
 		bool verifyCertificates = false, X509RevocationMode revocationMode = X509RevocationMode.Online,
 		X509RevocationFlag revocationFlag = X509RevocationFlag.ExcludeRoot)
@@ -129,7 +211,7 @@ public static class CmsHelper
 				else
 					throw new ArgumentException("The data must be specified for verifying a detached signature.", nameof(data));
 			}
-			// extract all included certificates from the CMS
+			// extract all included certificates from the CMS as cert store
 			var hCertStore = CertOpenStore(1, 0, 0, 0, hMsg).VerifyWinapiNonzero();
 			try
 			{
@@ -140,74 +222,22 @@ public static class CmsHelper
 				if (signerCount == 0)
 					throw new Win32Exception(CRYPT_E_NO_SIGNER);
 
+				var chainFlags = 0U;
+				if (verifyCertificates && revocationMode != X509RevocationMode.NoCheck)
+				{
+					chainFlags = (revocationMode == X509RevocationMode.Offline ? CERT_CHAIN_REVOCATION_CHECK_CACHE_ONLY : 0U)
+						| revocationFlag switch
+						{
+							X509RevocationFlag.EndCertificateOnly => CERT_CHAIN_REVOCATION_CHECK_END_CERT,
+							X509RevocationFlag.ExcludeRoot => CERT_CHAIN_REVOCATION_CHECK_CHAIN_EXCLUDE_ROOT,
+							X509RevocationFlag.EntireChain => CERT_CHAIN_REVOCATION_CHECK_CHAIN,
+							_ => 0U
+						};
+				};
+
 				// verify signature for every signer
 				for (var i = 0U; i < signerCount; i++)
-				{
-					// extract CERT_ID
-					nint pCertContext = 0;
-					var certIdLength = 0;
-					CryptMsgGetParam(hMsg, MsgParamType.CMSG_SIGNER_CERT_ID_PARAM, i, 0, ref certIdLength).VerifyWinapiTrue();
-					var certIdRaw = ArrayPool<byte>.Shared.Rent(certIdLength);
-					try
-					{
-						fixed (byte* pCertId = certIdRaw)
-						{
-							CryptMsgGetParam(hMsg, MsgParamType.CMSG_SIGNER_CERT_ID_PARAM, 0, (nint)pCertId, ref certIdLength).VerifyWinapiTrue();
-							pCertContext = CertFindCertificateInStore(hCertStore, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
-								0, CERT_FIND_CERT_ID, (nint)pCertId, 0);
-							if (pCertContext == 0)
-							{
-								var error = Marshal.GetLastWin32Error();
-								if (error == CRYPT_E_NOT_FOUND)
-									throw new Win32Exception(CRYPT_E_SIGNER_NOT_FOUND);
-								else
-									throw new Win32Exception(error);
-							}
-						}
-					}
-					finally
-					{
-						ArrayPool<byte>.Shared.Return(certIdRaw, true);
-					}
-
-					// validate signature
-					var vsp = new CMSG_CTRL_VERIFY_SIGNATURE_EX_PARA();
-					vsp.cbSize = (uint)Marshal.SizeOf(vsp);
-					vsp.dwSignerIndex = i;
-					vsp.dwSignerType = CMSG_VERIFY_SIGNER_CERT;
-					vsp.pvSigner = pCertContext;
-					CryptMsgControl(hMsg, 0, MsgControlType.CMSG_CTRL_VERIFY_SIGNATURE_EX, (nint)(&vsp)).VerifyWinapiTrue();
-
-					// verify certificates
-					if (verifyCertificates)
-					{
-						nint pChainContext = 0;
-						var chainParams = new CERT_CHAIN_PARA();
-						chainParams.cbSize = (uint)Marshal.SizeOf(chainParams);
-						try
-						{
-							var flags = 0U;
-							if (revocationMode != X509RevocationMode.NoCheck)
-							{
-								flags = (revocationMode == X509RevocationMode.Offline ? CERT_CHAIN_REVOCATION_CHECK_CACHE_ONLY : 0U)
-									| revocationFlag switch
-									{
-										X509RevocationFlag.EndCertificateOnly => CERT_CHAIN_REVOCATION_CHECK_END_CERT,
-										X509RevocationFlag.ExcludeRoot => CERT_CHAIN_REVOCATION_CHECK_CHAIN_EXCLUDE_ROOT,
-										X509RevocationFlag.EntireChain => CERT_CHAIN_REVOCATION_CHECK_CHAIN,
-										_ => 0U
-									};
-							};
-							CertGetCertificateChain(HCCE_CURRENT_USER, pCertContext, 0, 0, (nint)(&chainParams), flags,
-								0, (nint)(&pChainContext)).VerifyWinapiTrue();
-						}
-						finally
-						{
-							if (pChainContext != 0)
-								CertFreeCertificateChain(pChainContext);
-						}
-					}
-				}
+					VerifyOneSigner(hMsg, hCertStore, i, verifyCertificates, chainFlags);
 			}
 			finally
 			{
