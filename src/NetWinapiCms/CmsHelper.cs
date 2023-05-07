@@ -171,7 +171,6 @@ public static class CmsHelper
 					CertFreeCertificateChain(pChainContext);
 			}
 		}
-
 	}
 
 	/// <summary>
