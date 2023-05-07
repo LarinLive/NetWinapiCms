@@ -1,3 +1,6 @@
+// Copyright © Antoine Larine. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using static System.Runtime.InteropServices.JavaScript.JSType;
