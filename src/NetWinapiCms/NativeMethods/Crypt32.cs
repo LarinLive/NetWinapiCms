@@ -1323,13 +1323,13 @@ internal static class Crypt32
 	public const uint CRYPT_ACQUIRE_ALLOW_NCRYPT_KEY_FLAG = 0x00010000;
 
 	/// <summary>
-	/// This function will only attempt to obtain the key by using CNG and will not use CryptoAPI to obtain the key.
+	/// This function will attempt to obtain the key by using CNG. If that fails, this function will attempt to obtain the key by using CryptoAPI. 
 	/// The pdwKeySpec variable receives the CERT_NCRYPT_KEY_SPEC flag if CNG is used to obtain the key.
 	/// </summary>
 	public const uint CRYPT_ACQUIRE_PREFER_NCRYPT_KEY_FLAG = 0x00020000;
 
 	/// <summary>
-	/// This function will attempt to obtain the key by using CNG. If that fails, this function will attempt to obtain the key by using CryptoAPI. 
+	/// This function will only attempt to obtain the key by using CNG and will not use CryptoAPI to obtain the key. 
 	/// The pdwKeySpec variable receives the CERT_NCRYPT_KEY_SPEC flag if CNG is used to obtain the key.
 	/// </summary>
 	public const uint CRYPT_ACQUIRE_ONLY_NCRYPT_KEY_FLAG = 0x00040000;
@@ -1474,7 +1474,7 @@ internal static class Crypt32
 	/// A <see cref="CERT_STRONG_SIGN_PARA"/> structure used to perform strong signature checking.
 	/// </summary>
 	public const uint CMSG_CTRL_ENABLE_STRONG_SIGNATURE = 21;
-	
+
 
 	/// <summary>
 	/// Acquires a message parameter after a cryptographic message has been encoded or decoded

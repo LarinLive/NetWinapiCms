@@ -55,7 +55,8 @@ public static class CmsHelper
 		};
 
 		// acquire certificate private key
-		var flags = (silent ? CRYPT_ACQUIRE_SILENT_FLAG : 0U) | CRYPT_ACQUIRE_COMPARE_KEY_FLAG;
+		var flags = (silent ? CRYPT_ACQUIRE_SILENT_FLAG : 0U) | CRYPT_ACQUIRE_COMPARE_KEY_FLAG
+		   | CRYPT_ACQUIRE_PREFER_NCRYPT_KEY_FLAG | CRYPT_ACQUIRE_ALLOW_NCRYPT_KEY_FLAG;
 		CryptAcquireCertificatePrivateKey(certificate.Handle, flags, 0,
 			out var hProvider, out var dwKeySpec, out var pfCallerFreeProv).VerifyWinapiTrue();
 		try
@@ -63,13 +64,17 @@ public static class CmsHelper
 			if (pin.Length > 0)
 			{
 				// set PIN-code for the private key
-				var asciiPinLength = Encoding.ASCII.GetByteCount(pin);
-				var asciiPin = stackalloc byte[asciiPinLength + 1];
-				Encoding.ASCII.GetBytes(pin, new Span<byte>(asciiPin, asciiPinLength));
-				if (dwKeySpec == AT_KEYEXCHANGE)
-					CryptSetProvParam(hProvider, PP_KEYEXCHANGE_PIN, (nint)asciiPin, 0).VerifyWinapiTrue();
-				else if (dwKeySpec == AT_SIGNATURE)
-					CryptSetProvParam(hProvider, PP_SIGNATURE_PIN, (nint)asciiPin, 0).VerifyWinapiTrue();
+				if (dwKeySpec == CERT_NCRYPT_KEY_SPEC)
+					fixed (char* pPin = pin, pParam = NCRYPT_PIN_PROPERTY)
+						NCryptSetProperty(hProvider, (nint)pParam, (nint)pPin, (uint)(pin.Length + 1) * 2, silent ? NCRYPT_SILENT_FLAG : 0U).VerifySelfWinapiZero();
+				else if (dwKeySpec == AT_KEYEXCHANGE || dwKeySpec == AT_SIGNATURE)
+				{
+					var asciiPinLength = Encoding.ASCII.GetByteCount(pin);
+					var asciiPin = stackalloc byte[asciiPinLength + 1];
+					var dwParam = dwKeySpec == AT_KEYEXCHANGE ? PP_KEYEXCHANGE_PIN : PP_SIGNATURE_PIN;
+					Encoding.ASCII.GetBytes(pin, new Span<byte>(asciiPin, asciiPinLength));
+					CryptSetProvParam(hProvider, dwParam, (nint)asciiPin, 0).VerifyWinapiTrue();
+				}
 			}
 
 			// prepare CMSG_SIGNER_ENCODE_INFO structure
