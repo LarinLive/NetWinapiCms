@@ -66,7 +66,7 @@ public static class CmsHelper
 				// set PIN-code for the private key
 				if (dwKeySpec == CERT_NCRYPT_KEY_SPEC)
 					fixed (char* pPin = pin, pParam = NCRYPT_PIN_PROPERTY)
-						NCryptSetProperty(hProvider, (nint)pParam, (nint)pPin, (uint)(pin.Length + 1) * 2, silent ? NCRYPT_SILENT_FLAG : 0U).VerifySelfWinapiZero();
+						NCryptSetProperty(hProvider, (nint)pParam, (nint)pPin, (uint)(pin.Length + 1) * 2, silent ? NCRYPT_SILENT_FLAG : 0U).VerifyWinapiZero();
 				else if (dwKeySpec == AT_KEYEXCHANGE || dwKeySpec == AT_SIGNATURE)
 				{
 					var asciiPinLength = Encoding.ASCII.GetByteCount(pin);
@@ -168,10 +168,18 @@ public static class CmsHelper
 			nint pChainContext = 0;
 			var chainParams = new CERT_CHAIN_PARA();
 			chainParams.cbSize = (uint)Marshal.SizeOf(chainParams);
+			CertGetCertificateChain(HCCE_CURRENT_USER, pCertContext, 0, hCertStore, (nint)(&chainParams), chainFlags,
+				0, (nint)(&pChainContext)).VerifyWinapiTrue();
 			try
 			{
-				CertGetCertificateChain(HCCE_CURRENT_USER, pCertContext, 0, hCertStore, (nint)(&chainParams), chainFlags,
-					0, (nint)(&pChainContext)).VerifyWinapiTrue();
+				var policyPara = new CERT_CHAIN_POLICY_PARA();
+				policyPara.cbSize = (uint)Marshal.SizeOf(policyPara);
+				var policyStatus = new CERT_CHAIN_POLICY_STATUS();
+				policyStatus.cbSize = (uint)Marshal.SizeOf(policyStatus);
+				CertVerifyCertificateChainPolicy(CERT_CHAIN_POLICY_BASE, pChainContext, (nint)(&policyPara), (nint)(&policyStatus)).VerifyWinapiTrue();
+				policyStatus.dwError.VerifyWinapiZero();
+				CertVerifyCertificateChainPolicy(CERT_CHAIN_POLICY_BASIC_CONSTRAINTS, pChainContext, (nint)(&policyPara), (nint)(&policyStatus)).VerifyWinapiTrue();
+				policyStatus.dwError.VerifyWinapiZero();
 			}
 			finally
 			{

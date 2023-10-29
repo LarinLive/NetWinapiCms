@@ -30,10 +30,15 @@ internal static class WinApiResultExtensions
 		return input != 0 ? input : throw new Win32Exception(Marshal.GetLastPInvokeError());
 	}
 
-
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	public static int VerifySelfWinapiZero(this int result)
+	public static int VerifyWinapiZero(this int result)
 	{
 		return result == 0 ? result : throw new Win32Exception(result);
+	}
+
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	public static uint VerifyWinapiZero(this uint result)
+	{
+		return result == 0U ? result : throw new Win32Exception(unchecked((int)result));
 	}
 }
