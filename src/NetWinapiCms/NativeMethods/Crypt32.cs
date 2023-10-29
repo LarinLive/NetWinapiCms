@@ -720,6 +720,547 @@ internal static class Crypt32
 	}
 
 	/// <summary>
+	/// Checks a certificate chain to verify its validity, including its compliance with any specified validity policy criteria.
+	/// </summary>
+	/// <param name="pszPolicyOID">The policy</param>
+	/// <param name="pChainContext">A pointer to a <see cref="CERT_CHAIN_CONTEXT"/> structure that contains a chain to be verified.</param>
+	/// <param name="pPolicyPara">A pointer to a <see cref="CERT_CHAIN_POLICY_PARA"/> structure that provides the policy verification criteria for the chain. 
+	/// The dwFlags member of that structure can be set to change the default policy checking behavior.
+	///	In addition, policy-specific parameters can also be passed in the pvExtraPolicyPara member of the structure.</param>
+	/// <param name="pPolicyStatus">A pointer to a <see cref="CERT_CHAIN_POLICY_STATUS"/> structure where status information on the chain is returned.
+	/// OID-specific extra status can be returned in the pvExtraPolicyStatus member of this structure.</param>
+	/// <returns>If the chain can be verified for the specified policy, TRUE is returned and the dwError member of the pPolicyStatus is updated.
+	/// A dwError of 0 (ERROR_SUCCESS or S_OK) indicates the chain satisfies the specified policy.
+	/// A value of FALSE indicates that the function wasn't able to check for the policy.</returns>
+	/// <remarks>https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-certverifycertificatechainpolicy</remarks>
+	[DllImport(Crypt32Lib, CharSet = CharSet.Unicode, SetLastError = true)]
+	public static extern bool CertVerifyCertificateChainPolicy(
+	  [In] nint pszPolicyOID,
+	  [In] nint pChainContext,
+	  [In] nint pPolicyPara,
+	  [In, Out] nint pPolicyStatus
+	);
+
+	/// <summary>
+	/// Implements the base chain policy verification checks. The dwFlags member of the structure pointed to by pPolicyPara can be set to alter the default policy checking behavior.
+	/// </summary>
+	public const nint CERT_CHAIN_POLICY_BASE = 1;
+
+	/// <summary>
+	/// Implements the Authenticode chain policy verification checks. 
+	/// The pvExtraPolicyPara member of the structure pointed to by pPolicyPara can be set to point to an <see cref="AUTHENTICODE_EXTRA_CERT_CHAIN_POLICY_PARA"/> structure. 
+	/// The pvExtraPolicyStatus member of the structure pointed to by pPolicyStatus can be set to point to an <see cref="AUTHENTICODE_EXTRA_CERT_CHAIN_POLICY_STATUS"/> structure.
+	/// </summary>
+	public const nint CERT_CHAIN_POLICY_AUTHENTICODE = 2;
+
+	/// <summary>
+	/// Implements Authenticode Time Stamp chain policy verification checks. 
+	/// The pvExtraPolicyPara member of the data structure pointed to by pPolicyPara can be set to point to an <see cref="AUTHENTICODE_TS_EXTRA_CERT_CHAIN_POLICY_PARA"/> structure.
+	/// The pvExtraPolicyStatus member of the data structure pointed to by pPolicyStatus is not used and must be set to NULL
+	/// </summary>
+	public const nint CERT_CHAIN_POLICY_AUTHENTICODE_TS = 3;
+
+	/// <summary>
+	///	Implements the SSL client/server chain policy verification checks. 
+	///	The pvExtraPolicyPara member in the data structure pointed to by pPolicyPara can be set to point to an <see cref="SSL_EXTRA_CERT_CHAIN_POLICY_PARA"/> structure initialized with additional policy criteria.
+	///	To differentiate between server and client authorization certificates, the call to the <see cref="CertGetCertificateChain"/> function to get the chain context should specify the certificate type by setting the expected usage. 
+	///	Set the expected usage by setting the RequestedUsage member of the <see cref="CERT_CHAIN_PARA structure passed in the pChainPara input parameter of the CertGetCertificateChain function.
+	/// </summary>
+	public const nint CERT_CHAIN_POLICY_SSL = 4;
+
+	/// <summary>
+	/// Implements the basic constraints chain policy. Iterates through all the certificates in the chain checking for either a szOID_BASIC_CONSTRAINTS or a szOID_BASIC_CONSTRAINTS2 extension. 
+	/// If neither extension is present, the certificate is assumed to have valid policy. Otherwise, for the first certificate element,
+	/// checks if it matches the expected CA_FLAG or END_ENTITY_FLAG specified in the dwFlags member of the <see cref="CERT_CHAIN_POLICY_PARA"/> structure pointed to by the pPolicyPara parameter. 
+	/// If neither or both flags are set, then, the first element can be either a CA or END_ENTITY. All other elements must be a certification authority (CA). 
+	/// If the PathLenConstraint is present in the extension, it is checked. The first elements in the remaining simple chains(that is, the certificates used to sign the CTL) are checked to be an END_ENTITY.
+	/// If this verification fails, dwError will be set to TRUST_E_BASIC_CONSTRAINTS.
+	/// </summary>
+	public const nint CERT_CHAIN_POLICY_BASIC_CONSTRAINTS = 5;
+
+	/// <summary>
+	/// Implements the Windows NT Authentication chain policy, which consists of three distinct chain verifications in the following order: 
+	/// <see cref="CERT_CHAIN_POLICY_BASE"/> — Implements the base chain policy verification checks.The LOWORD of dwFlags can be set in pPolicyPara to alter the default policy checking behavior.For more information, see CERT_CHAIN_POLICY_BASE.
+	/// <see cref="CERT_CHAIN_POLICY_BASIC_CONSTRAINTS"/> — Implements the basic constraints chain policy. The HIWORD of dwFlags can be set to specify if the first element must be either a CA or END_ENTITY. 
+	/// For more information, see <see cref="CERT_CHAIN_POLICY_BASIC_CONSTRAINTS"/>. Checks if the second element in the chain, the CA that issued the end certificate, is a trusted CA for Windows NT Authentication.
+	/// A CA is considered to be trusted if it exists in the "NTAuth" system registry store found in the CERT_SYSTEM_STORE_LOCAL_MACHINE_ENTERPRISE store location. 
+	/// If this verification fails, the CA is untrusted, and dwError is set to CERT_E_UNTRUSTEDCA.
+	/// If CERT_PROT_ROOT_DISABLE_NT_AUTH_REQUIRED_FLAG is set in the Flags value of the HKEY_LOCAL_MACHINE policy ProtectedRoots subkey, defined by CERT_PROT_ROOT_FLAGS_REGPATH and the above check fails, the chain is checked for CERT_TRUST_HAS_VALID_NAME_CONSTRAINTS set in dwInfoStatus.
+	/// This is set if there was a valid name constraint for all namespaces including UPN. If the chain does not have this info status set, dwError is set to CERT_E_UNTRUSTEDCA.
+	/// </summary>
+	public const nint CERT_CHAIN_POLICY_NT_AUTH = 6;
+
+	/// <summary>
+	/// Checks the last element of the first simple chain for a Microsoft root public key. 
+	/// If that element does not contain a Microsoft root public key, the dwError member of the CERT_CHAIN_POLICY_STATUS structure pointed to by the pPolicyStatus parameter is set to CERT_E_UNTRUSTEDROOT.
+	/// The dwFlags member of the <see cref="CERT_CHAIN_POLICY_PARA"/> structure pointed to by the pPolicyStatus parameter can contain the MICROSOFT_ROOT_CERT_CHAIN_POLICY_CHECK_APPLICATION_ROOT_FLAG flag, 
+	/// which causes this function to instead check for the Microsoft application root "Microsoft Root Certificate Authority 2011".
+	/// The dwFlags member of the <see cref="CERT_CHAIN_POLICY_PARA"/> structure pointed to by the pPolicyPara parameter can contain the MICROSOFT_ROOT_CERT_CHAIN_POLICY_ENABLE_TEST_ROOT_FLAG flag, 
+	/// which causes this function to also check for the Microsoft test roots.
+	/// Note This policy object identifier (OID) does not perform any policy verification checks by itself, it is meant to be used in conjunction with other policies.
+	/// </summary>
+	public const nint CERT_CHAIN_POLICY_MICROSOFT_ROOT = 7;
+
+	/// <summary>
+	/// Specifies that extended validation of certificates is performed.
+	/// </summary>
+	public const nint CERT_CHAIN_POLICY_EV = 8;
+
+	/// <summary>
+	/// Checks if any certificates in the chain have weak crypto or if third party root certificate compliance and provide an error string. 
+	/// The pvExtraPolicyStatus member of the <see cref="CERT_CHAIN_POLICY_STATUS"/> structure pointed to by the pPolicyStatus parameter must point to <see cref="SSL_F12_EXTRA_CERT_CHAIN_POLICY_STATUS"/>, 
+	/// which is updated with the results of the weak crypto and root program compliance checks. 
+	/// Before calling, the cbSize member of the CERT_CHAIN_POLICY_STATUS structure pointed to by the pPolicyStatus parameter must be set to a value greater than or equal to sizeof(SSL_F12_EXTRA_CERT_CHAIN_POLICY_STATUS).
+	/// The dwError member in <see cref="CERT_CHAIN_POLICY_STATUS"/> structure pointed to by the pPolicyStatus parameter will be set to TRUST_E_CERT_SIGNATURE for potential weak crypto and set to CERT_E_UNTRUSTEDROOT for Third Party Roots not in compliance with the Microsoft Root Program.
+	/// </summary>
+	public const nint CERT_CHAIN_POLICY_SSL_F12 = 9;
+
+
+	/// <summary>
+	/// Contains an array of simple certificate chains and a trust status structure that indicates summary validity data on all of the connected simple chains.
+	/// </summary>
+	/// <remarks>https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/ns-wincrypt-cert_chain_context</remarks>
+	[StructLayout(LayoutKind.Sequential)]
+	public struct CERT_CHAIN_CONTEXT
+	{
+		/// <summary>
+		/// The size, in bytes, of this structure.
+		/// </summary>
+		public uint cbSize;
+
+		/// <summary>
+		/// A structure that indicates the combined trust status of the simple chains array. The structure includes an error status code and an information status code.
+		/// </summary>
+		public CERT_TRUST_STATUS TrustStatus;
+
+		/// <summary>
+		/// The number of simple chains in the array.
+		/// </summary>
+		public uint cChain;
+
+		/// <summary>
+		/// An array of pointers to simple chain structures. rgpChain[0] is the end certificate simple chain, and rgpChain[cChain–1] is the final chain. 
+		/// If the end certificate is to be considered valid, the final chain must begin with a certificate contained in the root store or an otherwise trusted, self-signed certificate. 
+		/// If the original chain begins with a trusted certificate, there will be only a single simple chain in the array.
+		/// </summary>
+		public nint rgpChain;
+
+		/// <summary>
+		/// The number of chains in the rgpLowerQualityChainContext array.
+		/// </summary>
+		public uint cLowerQualityChainContext;
+
+		/// <summary>
+		/// An array of pointers to <see cref="CERT_CHAIN_CONTEXT"/> structures. Returned when <see cref="CERT_CHAIN_RETURN_LOWER_QUALITY_CONTEXTS"/> is set in dwFlags.
+		/// </summary>
+		public nint rgpLowerQualityChainContext;
+
+		/// <summary>
+		/// A Boolean value set to TRUE if dwRevocationFreshnessTime is available.
+		/// </summary>
+		public bool fHasRevocationFreshnessTime;
+
+		/// <summary>
+		/// The largest CurrentTime, in seconds, minus the certificate revocation list's (CRL's) ThisUpdate of all elements checked.
+		/// </summary>
+		public uint dwRevocationFreshnessTime;
+
+		/// <summary>
+		/// Not documented
+		/// </summary>
+		public uint dwCreateFlags;
+
+		/// <summary>
+		/// Not documented
+		/// </summary>
+		public Guid ChainId;
+	}
+
+	/// <summary>
+	/// Contains trust information about a certificate in a certificate chain, summary trust information about a simple chain of certificates, or summary information about an array of simple chains.
+	/// </summary>
+	/// <remarks>https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/ns-wincrypt-cert_trust_status</remarks>
+	[StructLayout(LayoutKind.Sequential)]
+	public struct CERT_TRUST_STATUS
+	{
+		/// <summary>
+		/// dwErrorStatus is a bitmask of the following error codes defined for certificates and chains.
+		/// </summary>
+		public uint dwErrorStatus;
+
+		/// <summary>
+		/// The following information status codes are defined.
+		/// </summary>
+		public uint dwInfoStatus;
+	}
+
+	/// <summary>
+	/// No error found for this certificate or chain.
+	/// </summary>
+	public const uint CERT_TRUST_NO_ERROR = 0x00000000;
+
+	/// <summary>
+	/// This certificate or one of the certificates in the certificate chain is not time valid.
+	/// </summary>
+	public const uint CERT_TRUST_IS_NOT_TIME_VALID = 0x00000001;
+
+	/// <summary>
+	/// Trust for this certificate or one of the certificates in the certificate chain has been revoked.
+	/// </summary>
+	public const uint CERT_TRUST_IS_REVOKED = 0x00000004;
+
+	/// <summary>
+	/// The certificate or one of the certificates in the certificate chain does not have a valid signature.
+	/// </summary>
+	public const uint CERT_TRUST_IS_NOT_SIGNATURE_VALID = 0x00000008;
+
+	/// <summary>
+	/// The certificate or certificate chain is not valid for its proposed usage.
+	/// </summary>
+	public const uint CERT_TRUST_IS_NOT_VALID_FOR_USAGE = 0x00000010;
+
+	/// <summary>
+	/// The certificate or certificate chain is based on an untrusted root.
+	/// </summary>
+	public const uint CERT_TRUST_IS_UNTRUSTED_ROOT = 0x00000020;
+
+	/// <summary>
+	/// The revocation status of the certificate or one of the certificates in the certificate chain is unknown.
+	/// </summary>
+	public const uint CERT_TRUST_REVOCATION_STATUS_UNKNOWN = 0x00000040;
+
+	/// <summary>
+	/// One of the certificates in the chain was issued by a certification authority that the original certificate had certified.
+	/// </summary>
+	public const uint CERT_TRUST_IS_CYCLIC = 0x00000080;
+
+	/// <summary>
+	/// One of the certificates has an extension that is not valid.
+	/// </summary>
+	public const uint CERT_TRUST_INVALID_EXTENSION = 0x00000100;
+
+	/// <summary>
+	/// The certificate or one of the certificates in the certificate chain has a policy constraints extension, 
+	/// and one of the issued certificates has a disallowed policy mapping extension or does not have a required issuance policies extension.
+	/// </summary>
+	public const uint CERT_TRUST_INVALID_POLICY_CONSTRAINTS = 0x00000200;
+
+	/// <summary>
+	/// The certificate or one of the certificates in the certificate chain has a basic constraints extension, and either the certificate cannot be used to issue other certificates, 
+	/// or the chain path length has been exceeded.
+	/// </summary>
+	public const uint CERT_TRUST_INVALID_BASIC_CONSTRAINTS = 0x00000400;
+
+	/// <summary>
+	/// The certificate or one of the certificates in the certificate chain has a name constraints extension that is not valid.
+	/// </summary>
+	public const uint CERT_TRUST_INVALID_NAME_CONSTRAINTS = 0x00000800;
+
+	/// <summary>
+	/// The certificate or one of the certificates in the certificate chain has a name constraints extension that contains unsupported fields. 
+	/// The minimum and maximum fields are not supported. Thus minimum must always be zero and maximum must always be absent. 
+	/// Only UPN is supported for an Other Name.The following alternative name choices are not supported: X400 Address, EDI Party Name, Registered Id
+	/// </summary>
+	public const uint CERT_TRUST_HAS_NOT_SUPPORTED_NAME_CONSTRAINT = 0x00001000;
+
+	/// <summary>
+	/// The certificate or one of the certificates in the certificate chain has a name constraints extension and a name constraint is missing for one of the name choices in the end certificate.
+	/// </summary>
+	public const uint CERT_TRUST_HAS_NOT_DEFINED_NAME_CONSTRAINT = 0x00002000;
+
+	/// <summary>
+	/// The certificate or one of the certificates in the certificate chain has a name constraints extension, and there is not a permitted name constraint for one of the name choices in the end certificate.
+	/// </summary>
+	public const uint CERT_TRUST_HAS_NOT_PERMITTED_NAME_CONSTRAINT = 0x00004000;
+
+	/// <summary>
+	/// The certificate or one of the certificates in the certificate chain has a name constraints extension, and one of the name choices in the end certificate is explicitly excluded.
+	/// </summary>
+	public const uint CERT_TRUST_HAS_EXCLUDED_NAME_CONSTRAINT = 0x00008000;
+
+	/// <summary>
+	/// The revocation status of the certificate or one of the certificates in the certificate chain is either offline or stale.
+	/// </summary>
+	public const uint CERT_TRUST_IS_OFFLINE_REVOCATION = 0x01000000;
+
+	/// <summary>
+	/// The end certificate does not have any resultant issuance policies, and one of the issuing certification authority certificates has a policy constraints extension requiring it.
+	/// </summary>
+	public const uint CERT_TRUST_NO_ISSUANCE_CHAIN_POLICY = 0x02000000;
+
+	/// <summary>
+	/// The certificate is explicitly distrusted.
+	/// </summary>
+	public const uint CERT_TRUST_IS_EXPLICIT_DISTRUST = 0x04000000;
+
+	/// <summary>
+	/// The certificate does not support a critical extension.
+	/// </summary>
+	public const uint CERT_TRUST_HAS_NOT_SUPPORTED_CRITICAL_EXT = 0x08000000;
+
+	/// <summary>
+	/// The certificate has not been strong signed. Typically this indicates that the MD2 or MD5 hashing algorithms were used to create a hash of the certificate.
+	/// </summary>
+	public const uint CERT_TRUST_HAS_WEAK_SIGNATURE = 0x00100000;
+
+	/// <summary>
+	/// The certificate chain is not complete.
+	/// </summary>
+	public const uint CERT_TRUST_IS_PARTIAL_CHAIN = 0x00010000;
+
+	/// <summary>
+	/// A certificate trust list (CTL) used to create this chain was not time valid.
+	/// </summary>
+	public const uint CERT_TRUST_CTL_IS_NOT_TIME_VALID = 0x00020000;
+
+	/// <summary>
+	/// A CTL used to create this chain did not have a valid signature.
+	/// </summary>
+	public const uint CERT_TRUST_CTL_IS_NOT_SIGNATURE_VALID = 0x00040000;
+
+	/// <summary>
+	/// A CTL used to create this chain is not valid for this usage.
+	/// </summary>
+	public const uint CERT_TRUST_CTL_IS_NOT_VALID_FOR_USAGE = 0x00080000;
+
+	/// <summary>
+	/// An exact match issuer certificate has been found for this certificate.This status code applies to certificates only.
+	/// </summary>
+	public const uint CERT_TRUST_HAS_EXACT_MATCH_ISSUER = 0x00000001;
+
+	/// <summary>
+	/// A key match issuer certificate has been found for this certificate.This status code applies to certificates only.
+	/// </summary>
+	public const uint CERT_TRUST_HAS_KEY_MATCH_ISSUER = 0x00000002;
+
+	/// <summary>
+	/// A name match issuer certificate has been found for this certificate.This status code applies to certificates only.
+	/// </summary>
+	public const uint CERT_TRUST_HAS_NAME_MATCH_ISSUER = 0x00000004;
+
+
+	/// <summary>
+	/// This certificate is self-signed.This status code applies to certificates only.
+	/// </summary>
+	public const uint CERT_TRUST_IS_SELF_SIGNED = 0x00000008;
+
+	/// <summary>
+	/// The certificate or chain has a preferred issuer.This status code applies to certificates and chains.
+	/// </summary>
+	public const uint CERT_TRUST_HAS_PREFERRED_ISSUER = 0x00000100;
+
+	/// <summary>
+	/// An issuance chain policy exists.This status code applies to certificates and chains.
+	/// </summary>
+	public const uint CERT_TRUST_HAS_ISSUANCE_CHAIN_POLICY = 0x00000400;
+
+
+	/// <summary>
+	/// A valid name constraints for all namespaces, including UPN. This status code applies to certificates and chains.
+	/// </summary>
+	public const uint CERT_TRUST_HAS_VALID_NAME_CONSTRAINTS = 0x00000400;
+
+
+	/// <summary>
+	/// This certificate is peer trusted. This status code applies to certificates only.
+	/// </summary>
+	public const uint CERT_TRUST_IS_PEER_TRUSTED = 0x00000800;
+
+	/// <summary>
+	/// This certificate's certificate revocation list (CRL) validity has been extended. This status code applies to certificates only.
+	/// </summary>
+	public const uint CERT_TRUST_HAS_CRL_VALIDITY_EXTENDED = 0x00001000;
+
+	/// <summary>
+	/// The certificate was found in either a store pointed to by the hExclusiveRoot or hExclusiveTrustedPeople member of the CERT_CHAIN_ENGINE_CONFIG structure.
+	/// </summary>
+	public const uint CERT_TRUST_IS_FROM_EXCLUSIVE_TRUST_STORE = 0x00002000;
+
+	/// <summary>
+	/// The certificate chain created is a complex chain.This status code applies to chains only.
+	/// </summary>
+	public const uint CERT_TRUST_IS_COMPLEX_CHAIN = 0x00010000;
+
+
+	/// <summary>
+	/// A non-self-signed intermediate CA certificate was found in the store pointed to by the hExclusiveRoot member of the CERT_CHAIN_ENGINE_CONFIG structure. 
+	/// The CA certificate is treated as a trust anchor for the certificate chain.
+	/// This flag will only be set if the CERT_CHAIN_EXCLUSIVE_ENABLE_CA_FLAG value is set in the dwExclusiveFlags member of the <see cref="CERT_CHAIN_ENGINE_CONFIG"/> structure. 
+	/// If this flag is set, the CERT_TRUST_IS_SELF_SIGNED and the CERT_TRUST_IS_PARTIAL_CHAIN dwErrorStatus flags will not be set.
+	/// </summary>
+	public const uint CERT_TRUST_IS_CA_TRUSTED = 0x00004000;
+
+	/// <summary>
+	/// Contains information used in <see cref="CertVerifyCertificateChainPolicy"/> to establish policy criteria for the verification of certificate chains.
+	/// </summary>
+	/// <remarks>https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/ns-wincrypt-cert_chain_policy_para</remarks>
+	[StructLayout(LayoutKind.Sequential)]
+	public struct CERT_CHAIN_POLICY_PARA
+	{
+		/// <summary>
+		/// The size, in bytes, of this structure.
+		/// </summary>
+		public uint cbSize;
+
+		/// <summary>
+		/// A set of flags that indicate conditions that could potentially be not valid and that are to be ignored in building certificate chains.
+		/// </summary>
+		public uint dwFlags;
+
+		/// <summary>
+		/// The address of a pszPolicyOID-specific structure that provides additional validity policy conditions.
+		/// </summary>
+		public nint pvExtraPolicyPara;
+	}
+
+	#region Possible values for the CERT_CHAIN_POLICY_PARA.dwFlags member
+
+	/// <summary>
+	/// Ignore not time valid errors.
+	/// </summary>
+	public const uint CERT_CHAIN_POLICY_IGNORE_NOT_TIME_VALID_FLAG = 0x00000001;
+
+	/// <summary>
+	/// Ignore certificate trust list (CTL) not time valid errors.
+	/// </summary>
+	public const uint CERT_CHAIN_POLICY_IGNORE_CTL_NOT_TIME_VALID_FLAG = 0x00000002;
+
+	/// <summary>
+	/// Ignore time nesting errors.
+	/// </summary>
+	public const uint CERT_CHAIN_POLICY_IGNORE_NOT_TIME_NESTED_FLAG = 0x00000004;
+
+	/// <summary>
+	/// Ignore all time validity errors.
+	/// </summary>
+	public const uint CERT_CHAIN_POLICY_IGNORE_ALL_NOT_TIME_VALID_FLAGS =
+		CERT_CHAIN_POLICY_IGNORE_NOT_TIME_VALID_FLAG | CERT_CHAIN_POLICY_IGNORE_CTL_NOT_TIME_VALID_FLAG | CERT_CHAIN_POLICY_IGNORE_NOT_TIME_NESTED_FLAG;
+
+	/// <summary>
+	/// Ignore basic constraint errors.
+	/// </summary>
+	public const uint CERT_CHAIN_POLICY_IGNORE_INVALID_BASIC_CONSTRAINTS_FLAG = 0x00000008;
+
+	/// <summary>
+	/// Allow untrusted roots.
+	/// </summary>
+	public const uint CERT_CHAIN_POLICY_ALLOW_UNKNOWN_CA_FLAG = 0x00000010;
+
+	/// <summary>
+	/// Ignore invalid usage errors.
+	/// </summary>
+	public const uint CERT_CHAIN_POLICY_IGNORE_WRONG_USAGE_FLAG = 0x00000020;
+
+	/// <summary>
+	/// Ignore invalid name errors.
+	/// </summary>
+	public const uint CERT_CHAIN_POLICY_IGNORE_INVALID_NAME_FLAG = 0x00000040;
+
+	/// <summary>
+	/// Ignore invalid policy errors.
+	/// </summary>
+	public const uint CERT_CHAIN_POLICY_IGNORE_INVALID_POLICY_FLAG = 0x00000080;
+
+	/// <summary>
+	/// Ignores errors in obtaining valid revocation information.
+	/// </summary>
+	public const uint CERT_CHAIN_POLICY_IGNORE_END_REV_UNKNOWN_FLAG = 0x00000100;
+
+	/// <summary>
+	/// Ignores errors in obtaining valid CTL revocation information.
+	/// </summary>
+	public const uint CERT_CHAIN_POLICY_IGNORE_CTL_SIGNER_REV_UNKNOWN_FLAG = 0x00000200;
+
+	/// <summary>
+	/// Ignores errors in obtaining valid certification authority (CA) revocation information.
+	/// </summary>
+	public const uint CERT_CHAIN_POLICY_IGNORE_CA_REV_UNKNOWN_FLAG = 0x00000400;
+
+	/// <summary>
+	/// Ignores errors in obtaining valid root revocation information.
+	/// </summary>
+	public const uint CERT_CHAIN_POLICY_IGNORE_ROOT_REV_UNKNOWN_FLAG = 0x00000800;
+
+	/// <summary>
+	/// Ignores errors in obtaining valid revocation information.
+	/// </summary>
+	public const uint CERT_CHAIN_POLICY_IGNORE_ALL_REV_UNKNOWN_FLAGS =
+		CERT_CHAIN_POLICY_IGNORE_END_REV_UNKNOWN_FLAG | CERT_CHAIN_POLICY_IGNORE_CTL_SIGNER_REV_UNKNOWN_FLAG
+		| CERT_CHAIN_POLICY_IGNORE_CA_REV_UNKNOWN_FLAG | CERT_CHAIN_POLICY_IGNORE_ROOT_REV_UNKNOWN_FLAG;
+
+	/// <summary>
+	/// Allow untrusted test roots.
+	/// </summary>
+	public const uint CERT_CHAIN_POLICY_ALLOW_TESTROOT_FLAG = 0x00008000;
+
+	/// <summary>
+	/// Always trust test roots.
+	/// </summary>
+	public const uint CERT_CHAIN_POLICY_TRUST_TESTROOT_FLAG = 0x00004000;
+
+	/// <summary>
+	/// Ignore critical extension not supported errors.
+	/// </summary>
+	public const uint CERT_CHAIN_POLICY_IGNORE_NOT_SUPPORTED_CRITICAL_EXT_FLAG = 0x00002000;
+
+	/// <summary>
+	/// Ignore peer trusts.
+	/// </summary>
+	public const uint CERT_CHAIN_POLICY_IGNORE_PEER_TRUST_FLAG = 0x00001000;
+
+	/// <summary>
+	/// Checks if the first certificate element is a CA.
+	/// </summary>
+	public const uint BASIC_CONSTRAINTS_CERT_CHAIN_POLICY_CA_FLAG = 0x80000000;
+
+	/// <summary>
+	/// Checks if the first certificate element is an end entity.
+	/// </summary>
+	public const uint BASIC_CONSTRAINTS_CERT_CHAIN_POLICY_END_ENTITY_FLAG = 0x40000000;
+
+	/// <summary>
+	/// Also check for the Microsoft test roots in addition to the Microsoft public root.
+	/// </summary>
+	public const uint MICROSOFT_ROOT_CERT_CHAIN_POLICY_ENABLE_TEST_ROOT_FLAG = 0x00010000;
+
+	#endregion
+
+	/// <summary>
+	/// Holds certificate chain status information returned by the CertVerifyCertificateChainPolicy function when the certificate chains are validated.
+	/// </summary>
+	/// <remarks>https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/ns-wincrypt-cert_chain_policy_status</remarks>
+	[StructLayout(LayoutKind.Sequential)]
+	public struct CERT_CHAIN_POLICY_STATUS
+	{
+		/// <summary>
+		/// The size, in bytes, of this structure.
+		/// </summary>
+		public uint cbSize;
+
+		/// <summary>
+		/// A value that indicates that an error or invalid condition was encountered during the validation process. 
+		/// The values of this member are specific to the policy type as specified by the value of the pszPolicyOID parameter of the <see cref="CertVerifyCertificateChainPolicy"/> function.
+		/// </summary>
+		public uint dwError;
+
+		/// <summary>
+		/// Index that indicates the chain in which an error or condition that is not valid was found. 
+		/// </summary>
+		public int lChainIndex;
+
+		/// <summary>
+		/// Index that indicates the element in a chain where an error or condition that is not valid was found.
+		/// </summary>
+		public int lElementIndex;
+
+		/// <summary>
+		/// A pointer to a structure. The structure type is determined by the value of the pszPolicyOID parameter of the <see cref="CertVerifyCertificateChainPolicy"/> function.
+		/// In addition to dwError errors, policy OID–specific extra status can also be returned here to provide additional chain status information.
+		/// </summary>
+		public nint pvExtraPolicyStatus;
+	}
+
+	/// <summary>
 	/// Opens a certificate store by using a specified store provider type. While this function can open a certificate store for most purposes, CertOpenSystemStore is recommended to open the most common certificate stores. 
 	/// CertOpenStore is required for more complex options and special cases.
 	/// </summary>
@@ -1920,4 +2461,94 @@ internal static class Crypt32
 	/// The signed cryptographic message does not have a signer for the specified signer index.
 	/// </summary>
 	public const int CRYPT_E_NO_SIGNER = unchecked((int)0x8009200E);
+
+	/// <summary>
+	/// The certificate or signature has been revoked.
+	/// </summary>
+	public const int CRYPT_E_REVOKED = unchecked((int)0x80092010);
+
+	/// <summary>
+	/// The signature of the certificate cannot be verified.
+	/// </summary>
+	public const int TRUST_E_CERT_SIGNATURE = unchecked((int)0x80096004);
+
+	/// <summary>
+	/// A certification chain processed correctly but terminated in a root certificate that is not trusted by the trust provider.
+	/// </summary>
+	public const int CERT_E_UNTRUSTEDROOT = unchecked((int)0x800B0109);
+
+	/// <summary>
+	/// The root certificate is a testing certificate, and policy settings disallow test certificates.
+	/// </summary>
+	public const int CERT_E_UNTRUSTEDTESTROOT = unchecked((int)0x800B010D);
+
+	/// <summary>
+	/// A chain of certificates was not correctly created.
+	/// </summary>
+	public const int CERT_E_CHAINING = unchecked((int)0x800B010A);
+
+	/// <summary>
+	/// The certificate is not valid for the requested usage.
+	/// </summary>
+	public const int CERT_E_WRONG_USAGE = unchecked((int)0x800B0110);
+
+	/// <summary>
+	/// A required certificate is not within its validity period.
+	/// </summary>
+	public const int CERT_E_EXPIRED = unchecked((int)0x800B0101);
+
+	/// <summary>
+	/// The certificate has an invalid name. Either the name is not included in the permitted list, or it is explicitly excluded.
+	/// </summary>
+	public const int CERT_E_INVALID_NAME = unchecked((int)0x800B0114);
+
+	/// <summary>
+	/// The certificate has an invalid policy. 
+	/// </summary>
+	public const int CERT_E_INVALID_POLICY = unchecked((int)0x800B0113);
+
+	/// <summary>
+	/// The basic constraints of the certificate are not valid, or they are missing.
+	/// </summary>
+	public const int TRUST_E_BASIC_CONSTRAINTS = unchecked((int)0x80096019);
+
+	/// <summary>
+	/// The validity periods of the certification chain do not nest correctly.
+	/// </summary>
+	public const int CERT_E_CRITICAL = unchecked((int)0x800B0102);
+
+	/// <summary>
+	/// The validity periods of the certification chain do not nest correct
+	/// </summary>
+	public const int CERT_E_VALIDITYPERIODNESTING = unchecked((int)0x800B0102);
+
+	/// <summary>
+	/// The revocation function was unable to check revocation for the certificate.
+	/// </summary>
+	public const int CRYPT_E_NO_REVOCATION_CHECK = unchecked((int)0x80092012);
+
+	/// <summary>
+	/// The revocation function was unable to check revocation because the revocation server was offline.
+	/// </summary>
+	public const int CRYPT_E_REVOCATION_OFFLINE = unchecked((int)0x80092013);
+
+	/// <summary>
+	/// The certificate is being used for a purpose other than one specified by the issuing CA.
+	/// </summary>
+	public const int CERT_E_PURPOSE = unchecked((int)0x800B0106);
+
+	/// <summary>
+	/// The revocation process could not continue, and the certificate could not be checked.
+	/// </summary>
+	public const int CERT_E_REVOCATION_FAILURE = unchecked((int)0x800B010E);
+
+	/// <summary>
+	/// The certificate's CN name does not match the passed value.
+	/// </summary>
+	public const int CERT_E_CN_NO_MATCH = unchecked((int)0x800B010F);
+
+	/// <summary>
+	/// A certificate that can only be used as an end-entity is being used as a CA or vice versa.
+	/// </summary>
+	public const int CERT_E_ROLE = unchecked((int)0x800B0103);
 }
