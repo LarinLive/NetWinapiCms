@@ -136,7 +136,7 @@ public static class CmsHelper
 		{
 			fixed (byte* pCertId = certIdRaw)
 			{
-				CryptMsgGetParam(hMsg, CMSG_SIGNER_CERT_ID_PARAM, 0, (nint)pCertId, ref certIdLength).VerifyWinapiTrue();
+				CryptMsgGetParam(hMsg, CMSG_SIGNER_CERT_ID_PARAM, signerIndex, (nint)pCertId, ref certIdLength).VerifyWinapiTrue();
 				pCertContext = CertFindCertificateInStore(hCertStore, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
 					0, CERT_FIND_CERT_ID, (nint)pCertId, 0);
 				if (pCertContext == 0)
