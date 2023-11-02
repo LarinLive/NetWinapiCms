@@ -484,6 +484,7 @@ internal static class Crypt32
 		[In] nint pChainContext
 	);
 
+
 	/// <summary>
 	/// Frees a certificate context by decrementing its reference count. When the reference count goes to zero, the function frees the memory used by a certificate contex
 	/// </summary>
@@ -672,6 +673,14 @@ internal static class Crypt32
 		/// Optional flags that modify chain retrieval behavior.
 		/// </summary>
 		public uint dwStrongSignFlags;
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="CERT_CHAIN_PARA"/> structure
+		/// </summary>
+		public CERT_CHAIN_PARA()
+		{
+			cbSize = (uint)Marshal.SizeOf(this);
+		}
 	}
 
 	/// <summary>
@@ -1111,6 +1120,14 @@ internal static class Crypt32
 		/// The address of a pszPolicyOID-specific structure that provides additional validity policy conditions.
 		/// </summary>
 		public nint pvExtraPolicyPara;
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="CERT_CHAIN_POLICY_PARA"/> structure
+		/// </summary>
+		public CERT_CHAIN_POLICY_PARA()
+		{
+			cbSize = (uint)Marshal.SizeOf(this);
+		}
 	}
 
 	#region Possible values for the CERT_CHAIN_POLICY_PARA.dwFlags member
@@ -1258,6 +1275,14 @@ internal static class Crypt32
 		/// In addition to dwError errors, policy OID–specific extra status can also be returned here to provide additional chain status information.
 		/// </summary>
 		public nint pvExtraPolicyStatus;
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="CMSG_CTRL_ADD_SIGNER_UNAUTH_ATTR_PARA"/> structure
+		/// </summary>
+		public CERT_CHAIN_POLICY_STATUS()
+		{
+			cbSize = (uint)Marshal.SizeOf(this);
+		}
 	}
 
 	/// <summary>
@@ -1314,6 +1339,14 @@ internal static class Crypt32
 		/// A pointer to a <see cref="CERT_PUBLIC_KEY_INFO"/> structure, a certificate context, a chain context, or NULL depending on the value of dwSignerType.
 		/// </summary>
 		public nint pvSigner;
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="CMSG_CTRL_VERIFY_SIGNATURE_EX_PARA"/> structure
+		/// </summary>
+		public CMSG_CTRL_VERIFY_SIGNATURE_EX_PARA()
+		{
+			cbSize = (uint)Marshal.SizeOf(this);
+		}
 	}
 
 	/// <summary>
@@ -1387,6 +1420,14 @@ internal static class Crypt32
 		/// Array of encoded attribute certificates. Used only if CMSG_SIGNED_ENCODE_INFO_HAS_CMS_FIELDS is defined. This array of encoded attribute certificates can be used with CMS for PKCS #7 processing
 		/// </summary>
 		public nint rgAttrCertEncoded;
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="CERT_CHAIN_PARA"/> structure
+		/// </summary>
+		public CMSG_SIGNED_ENCODE_INFO()
+		{
+			cbSize = (uint)Marshal.SizeOf(this);
+		}
 	}
 
 	/// <summary>
@@ -1461,6 +1502,14 @@ internal static class Crypt32
 		/// This member is not used. This member must be set to NULL if it is present in the data structure
 		/// </summary>
 		public nint pvHashEncryptionAuxInfo;
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="CMSG_SIGNER_ENCODE_INFO"/> structure
+		/// </summary>
+		public CMSG_SIGNER_ENCODE_INFO()
+		{
+			cbSize = (uint)Marshal.SizeOf(this);
+		}
 	}
 
 	/// <summary>
@@ -1521,7 +1570,6 @@ internal static class Crypt32
 		/// <summary>
 		/// An object identifier (OID) that specifies the type of data contained in the rgValue array
 		/// </summary>
-		[MarshalAs(UnmanagedType.LPStr)]
 		public nint pszObjId;
 
 		/// <summary>
@@ -1664,7 +1712,7 @@ internal static class Crypt32
 		/// <summary>
 		/// The size, in bytes, of the buffer pointed to by the <see cref="pbEncoded"/> member.
 		/// </summary>
-		public int cbEncoded;
+		public uint cbEncoded;
 
 		/// <summary>
 		/// A pointer to a buffer that contains an Abstract Syntax Notation One (ASN.1) encoded content information sequence. 
@@ -1695,7 +1743,7 @@ internal static class Crypt32
 		/// Optional. A pointer to a null-terminated string that specifies the Time Stamping Authority (TSA) policy under which the time stamp token was provided
 		/// </summary>
 		[MarshalAs(UnmanagedType.LPStr)]
-		public string? pszTSAPolicyId;
+		public nint pszTSAPolicyId;
 
 		/// <summary>
 		/// A <see cref="CRYPT_ALGORITHM_IDENTIFIER"/> structure that contains information about the algorithm used to calculate the hash. 
@@ -1880,6 +1928,139 @@ internal static class Crypt32
 	public const uint AT_SIGNATURE = 2;
 	public const uint CERT_NCRYPT_KEY_SPEC = 0xFFFFFFFF;
 
+
+	/// <summary>
+	/// Encodes a structure of the type indicated by the value of the lpszStructType parameter. 
+	/// The use of CryptEncodeObjectEx is recommended as an API that performs the same function with significant performance improvements.
+	/// </summary>
+	/// <param name="dwCertEncodingType">Type of encoding used. It is always acceptable to specify both the certificate and message encoding types by combining them with a bitwise-OR operation</param>
+	/// <param name="lpszStructType">A pointer to an OID defining the structure type. If the high-order word of the lpszStructType parameter is zero, the low-order word specifies the integer identifier for the type of the specified structure.
+	/// Otherwise, this parameter is a long pointer to a null-terminated string.</param>
+	/// <param name="pvStructInfo">A pointer to the structure to be encoded. The structure must be of a type specified by lpszStructType.</param>
+	/// <param name="pbEncoded">A pointer to a buffer to receive the encoded structure. When the buffer that is specified is not large enough to receive the decoded structure, 
+	/// the function sets the ERROR_MORE_DATA code and stores the required buffer size, in bytes, in the variable pointed to by pcbEncoded.
+	/// This parameter can be NULL to retrieve the size of this information for memory allocation purposes.</param>
+	/// <param name="pcbEncoded">A pointer to a DWORD variable that contains the size, in bytes, of the buffer pointed to by the pbEncoded parameter.
+	/// When the function returns, the DWORD value contains the number of allocated encoded bytes stored in the buffer.</param>
+	/// <returns>If the function succeeds, the return value is nonzero (TRUE).
+	/// If the function fails, the return value is zero(FALSE). For extended error information, call GetLastError</returns>
+	/// <remarks>https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-cryptencodeobject</remarks>
+	[DllImport(Crypt32Lib, CharSet = CharSet.Unicode, SetLastError = true)]
+	[Obsolete("The use of CryptEncodeObjectEx is recommended as an API that performs the same function with significant performance improvements.")]
+	public static extern bool CryptEncodeObject(
+	  [In] uint dwCertEncodingType,
+	  [In] nint lpszStructType,
+	  [In] nint pvStructInfo,
+	  [Out] nint pbEncoded,
+	  [In, Out] nint pcbEncoded
+	);
+
+	/// <summary>
+	/// Encodes a structure of the type indicated by the value of the lpszStructType parameter. This function offers a significant performance improvement over <see cref="CryptEncodeObject"/>
+	/// by supporting memory allocation with the <see cref="CRYPT_ENCODE_ALLOC_FLAG"/> value
+	/// </summary>
+	/// <param name="dwCertEncodingType">Type of encoding used. It is always acceptable to specify both the certificate and message encoding types by combining them with a bitwise-OR operation</param>
+	/// <param name="lpszStructType">A pointer to an object identifier (OID) that defines the structure type. If the high-order word of the lpszStructType parameter is zero, the low-order word specifies an integer identifier for the type of the specified structure. 
+	/// Otherwise, this parameter is a pointer to a null-terminated string that contains the string representation of the OID.</param>
+	/// <param name="pvStructInfo">A pointer to the structure to be encoded. The structure must be of the type specified by lpszStructType.</param>
+	/// <param name="dwFlags">Specifies options for the encoding. This parameter can be zero or a combination of one or more of values.</param>
+	/// <param name="pEncodePara">A pointer to a <see cref="CRYPT_ENCODE_PARA"/> structure that contains encoding information. This parameter can be NULL.	
+	/// If either pEncodePara or the pfnAlloc member of pEncodePara is NULL, then LocalAlloc is used for the allocation and LocalFree must be called to free the memory.
+	/// If both pEncodePara and the pfnAlloc member of pEncodePara are not NULL, then the function pointed to by the pfnAlloc member of the <see cref="CRYPT_ENCODE_PARA"/> structure pointed to by pEncodePara is called for the allocation.The function pointed to by the pfnFree member of pEncodePara must be called to free the memory.</param>
+	/// <param name="pvEncoded">A pointer to a buffer to receive the encoded structure. The size of this buffer is specified in the pcbEncoded parameter. 
+	/// When the buffer that is specified is not large enough to receive the decoded structure, the function sets the ERROR_MORE_DATA code and stores the required buffer size, in bytes, in the variable pointed to by pcbEncoded.
+	/// This parameter can be NULL to retrieve the size of the buffer for memory allocation purposes.
+	/// If dwFlags contains the <see cref="CRYPT_ENCODE_ALLOC_FLAG"/> flag, pvEncoded is not a pointer to a buffer but is the address of a pointer to the buffer. 
+	/// Because memory is allocated inside the function and the pointer is stored in pvEncoded, pvEncoded cannot be NULL.</param>
+	/// <param name="pcbEncoded">A pointer to a DWORD variable that contains the size, in bytes, of the buffer pointed to by the pvEncoded parameter. 
+	/// When the function returns, the variable pointed to by the pcbEncoded parameter contains the number of allocated, encoded bytes stored in the buffer.
+	/// When dwFlags contains the <see cref="CRYPT_ENCODE_ALLOC_FLAG"/> flag, pcbEncoded is the address of a pointer to the DWORD value that is updated.</param>
+	/// <returns>Returns nonzero if successful or zero otherwise.</returns>
+	/// <remarks>https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-cryptencodeobjectex</remarks>
+	[DllImport(Crypt32Lib, CharSet = CharSet.Unicode, SetLastError = true)]
+	public static extern bool CryptEncodeObjectEx(
+		[In] uint dwCertEncodingType,
+		[In] nint lpszStructType,
+		[In] nint pvStructInfo,
+		[In] uint dwFlags,
+		[In] nint pEncodePara,
+		[Out] nint pvEncoded,
+		[In, Out] nint pcbEncoded
+	);
+
+	#region Possible values of the CryptEncodeObjectEx.lpszStructType parameter
+
+	public const nint PKCS_ATTRIBUTE = 22;
+
+	#endregion
+
+	#region Possible values of the CryptEncodeObjectEx.dwFlags parameter
+
+	/// <summary>
+	/// The called encoding function allocates memory for the encoded bytes.A pointer to the allocated bytes is returned in pvEncoded.
+	/// </summary>
+	public const uint CRYPT_ENCODE_ALLOC_FLAG = 0x00008000;
+
+	/// <summary>
+	/// This flag is applicable for enabling Punycode encoding of Unicode string values.
+	/// </summary>
+	public const uint CRYPT_ENCODE_ENABLE_PUNYCODE_FLAG = 0x00020000;
+
+	/// <summary>
+	/// This flag is applicable when encoding <see cref="X509_UNICODE_NAME"/>, <see cref="X509_UNICODE_NAME_VALUE"/>, or <see cref="X509_UNICODE_ANY_STRING"/>.
+	/// If this flag is set, the characters are not checked to determine whether they are valid for the specified value type.
+	/// </summary>
+	public const uint CRYPT_UNICODE_NAME_ENCODE_DISABLE_CHECK_TYPE_FLAG = 0x40000000;
+
+	/// <summary>
+	/// This flag is applicable when encoding X509_UNICODE_NAME. If this flag is set and all the Unicode characters are <= 0xFF, the CERT_RDN_T61_STRING is selected instead of the CERT_RDN_UNICODE_STRING.
+	/// </summary>
+	public const uint CRYPT_UNICODE_NAME_ENCODE_ENABLE_T61_UNICODE_FLAG = 0x80000000;
+
+	/// <summary>
+	/// This flag is applicable when encoding an X509_UNICODE_NAME.When set, <see cref="CERT_RDN_UTF8_STRING"/> is selected instead of <see cref="CERT_RDN_UNICODE_STRING"/>.
+	/// </summary>
+	public const uint CRYPT_UNICODE_NAME_ENCODE_ENABLE_UTF8_UNICODE_FLAG = 0x20000000;
+
+	/// <summary>
+	/// This flag is applicable when encoding an <see cref="X509_UNICODE_NAME"/>. When set, <see cref="CERT_RDN_UTF8_STRING"/> is selected instead of <see cref="CERT_RDN_PRINTABLE_STRING"/> for directory string types.
+	/// Also, this flag enables <see cref="CRYPT_UNICODE_NAME_ENCODE_ENABLE_UTF8_UNICODE_FLAG"/>.
+	/// </summary>
+	public const uint CRYPT_UNICODE_NAME_ENCODE_FORCE_UTF8_UNICODE_FLAG = 0x10000000;
+
+	#endregion
+
+	/// <summary>
+	/// Is used by the <see cref="CryptEncodeObjectEx"/> function to provide access to memory allocation and memory freeing callback functions.
+	/// </summary>
+	/// <remarks>https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/ns-wincrypt-crypt_encode_para</remarks>
+	[StructLayout(LayoutKind.Sequential)]
+	public struct CRYPT_ENCODE_PARA
+	{
+		/// <summary>
+		/// Indicates the size, in bytes, of the structure.
+		/// </summary>
+		public uint cbSize;
+
+		/// <summary>
+		/// This member is an optional pointer to a callback function used to allocate memory.
+		/// </summary>
+		public nint pfnAlloc;
+
+		/// <summary>
+		/// This member is an optional pointer to a callback function used to free memory allocated by the allocate callback function.
+		/// </summary>
+		public nint pfnFree;
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="CRYPT_ENCODE_PARA"/> structure
+		/// </summary>
+		public CRYPT_ENCODE_PARA()
+		{
+			cbSize = (uint)Marshal.SizeOf(this);
+		}
+	}
+
 	/// <summary>
 	/// Frees memory allocated by <see cref="CryptMemAlloc"/> or <see cref="CryptMemRealloc"/>
 	/// </summary>
@@ -2016,6 +2197,38 @@ internal static class Crypt32
 	/// </summary>
 	public const uint CMSG_CTRL_ENABLE_STRONG_SIGNATURE = 21;
 
+	/// <summary>
+	/// The structure is used to add an unauthenticated attribute to a signer of a signed message. 
+	/// This structure is passed to <see cref="CryptMsgControl"/> if the dwCtrlType parameter is set to <see cref="CMSG_CTRL_ADD_SIGNER_UNAUTH_ATTR"/>.
+	/// </summary>
+	/// <remarks>https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/ns-wincrypt-cmsg_ctrl_add_signer_unauth_attr_para</remarks>
+	[StructLayout(LayoutKind.Sequential)]
+	public struct CMSG_CTRL_ADD_SIGNER_UNAUTH_ATTR_PARA
+	{
+		/// <summary>
+		/// Size of this structure in bytes.
+		/// </summary>
+		public uint cbSize;
+
+		/// <summary>
+		/// Index of the signer in the rgSigners array of pointers of <see cref="CMSG_SIGNER_ENCODE_INFO"/> structures in a signed message's <see cref="CMSG_SIGNED_ENCODE_INFO"/> structure. 
+		/// The unauthenticated attribute is to be added to this signer's information.
+		/// </summary>
+		public uint dwSignerIndex;
+
+		/// <summary>
+		/// The attribute encoded value
+		/// </summary>
+		public CRYPT_INTEGER_BLOB blob;
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="CMSG_CTRL_ADD_SIGNER_UNAUTH_ATTR_PARA"/> structure
+		/// </summary>
+		public CMSG_CTRL_ADD_SIGNER_UNAUTH_ATTR_PARA()
+		{
+			cbSize = (uint)Marshal.SizeOf(this);
+		}
+	}
 
 	/// <summary>
 	/// Acquires a message parameter after a cryptographic message has been encoded or decoded
@@ -2033,7 +2246,7 @@ internal static class Crypt32
 		[In] uint dwParamType,
 		[In] uint dwIndex,
 		[In] nint pvData,
-		ref int pcbData
+		[In, Out] nint pcbData
 	);
 
 
@@ -2392,10 +2605,9 @@ internal static class Crypt32
 	/// <returns>If the function is unable to retrieve, decode, and validate the time stamp context, it returns FALSE</returns>
 	/// <remarks>https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-cryptretrievetimestamp</remarks>
 	[DllImport(Crypt32Lib, CharSet = CharSet.Unicode, SetLastError = true)]
-	public static extern bool CryptRetrieveTimeStamp
-	(
+	public static extern bool CryptRetrieveTimeStamp(
 		[In][MarshalAs(UnmanagedType.LPWStr)] string? wszUrl,
-		[In] RetrievalFlags dwRetrievalFlags,
+		[In] uint dwRetrievalFlags,
 		[In] int dwTimeout,
 		[In][MarshalAs(UnmanagedType.LPStr)] string? pszHashId,
 		[In] nint pPara,
@@ -2406,44 +2618,51 @@ internal static class Crypt32
 		[Out] nint phStore
 	);
 
+	#region Possible values for the CryptRetrieveTimeStamp.dwRetrievalFlags parameter 
 
 	/// <summary>
-	/// Possible values for the CryptRetrieveTimeStamp.dwRetrievalFlags parameter 
+	/// Inhibit hash calculation on the array of bytes pointed to by the pbData parameter.
 	/// </summary>
-	[Flags]
-	public enum RetrievalFlags : uint
-	{
-		/// <summary>
-		/// None of the flags specified
-		/// </summary>
-		None = 0,
+	public const uint TIMESTAMP_DONT_HASH_DATA = 0x00000001;
 
-		/// <summary>
-		/// Inhibit hash calculation on the array of bytes pointed to by the pbData parameter.
-		/// </summary>
-		TIMESTAMP_DONT_HASH_DATA = 0x00000001,
+	/// <summary>
+	/// Enforce signature validation on the retrieved time stamp. This flag is valid only if the fRequestCerts member of the <see cref="CRYPT_TIMESTAMP_PARA"/> pointed to by the pPara parameter is set to TRUE.
+	/// </summary>
+	public const uint TIMESTAMP_VERIFY_CONTEXT_SIGNATURE = 0x00000020;
 
-		/// <summary>
-		/// Enforce signature validation on the retrieved time stamp. This flag is valid only if the fRequestCerts member of the <see cref="CRYPT_TIMESTAMP_PARA"/> pointed to by the pPara parameter is set to TRUE.
-		/// </summary>
-		TIMESTAMP_VERIFY_CONTEXT_SIGNATURE = 0x00000020,
+	/// <summary>
+	/// Set this flag to inhibit automatic authentication handling
+	/// </summary>
+	public const uint TIMESTAMP_NO_AUTH_RETRIEVAL = 0x00020000;
 
-		/// <summary>
-		/// Set this flag to inhibit automatic authentication handling
-		/// </summary>
-		TIMESTAMP_NO_AUTH_RETRIEVAL = 0x00020000
-	}
+	#endregion
 
+	/// <summary>
+	/// Validates the time stamp signature on a specified array of bytes.
+	/// </summary>
+	/// <param name="pbTSContentInfo">A pointer to a buffer that contains time stamp content.</param>
+	/// <param name="cbTSContentInfo">The size, in bytes, of the buffer pointed to by the pbTSContentInfo parameter.</param>
+	/// <param name="pbData">A pointer to an array of bytes on which to validate the time stamp signature.</param>
+	/// <param name="cbData">The size, in bytes, of the array pointed to by the pbData parameter.</param>
+	/// <param name="hAdditionalStore">The handle of an additional store to search for supporting Time Stamping Authority (TSA) signing certificates and certificate trust lists (CTLs).
+	/// This parameter can be NULL if no additional store is to be searched.</param>
+	/// <param name="ppTsContext">A pointer to a PCRYPT_TIMESTAMP_CONTEXT structure. When you have finished using the context, you must free it by calling the <see cref="CryptMemFree"/> function.</param>
+	/// <param name="ppTsSigner">A pointer to a PCERT_CONTEXT that receives the certificate of the signer. 
+	/// When you have finished using this structure, you must free it by passing this pointer to the <see cref="CertFreeCertificateContext"/> function.
+	/// Set this parameter to NULL if the TSA signer's certificate is not needed.</param>
+	/// <param name="phStore">A pointer to a handle that receives the certificate store opened on CMS to search for supporting certificates. 
+	/// This parameter can be NULL if the TSA supporting certificates are not needed.When you have finished using this handle, you must release it by passing it to the <see cref="CertCloseStore"/> function.</param>
+	/// <returns>If the function succeeds, the function returns TRUE.</returns>
+	/// <remarks>https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-cryptverifytimestampsignature</remarks>
 	[DllImport(Crypt32Lib, CharSet = CharSet.Unicode, SetLastError = true)]
-	public static extern bool CryptVerifyTimeStampSignature
-	(
-		[In] byte[] pbTSContentInfo,
-		[In] int cbTSContentInfo,
-		[In] byte[] pbData,
-		[In] int cbData,
+	public static extern bool CryptVerifyTimeStampSignature(
+		[In] nint pbTSContentInfo,
+		[In] uint cbTSContentInfo,
+		[In] nint pbData,
+		[In] uint cbData,
 		[In] nint hAdditionalStore,
-		[Out] nint pTsContext,
-		[Out] nint pTsSigner,
+		[Out] nint ppTsContext,
+		[Out] nint ppTsSigner,
 		[Out] nint phStore
 	);
 

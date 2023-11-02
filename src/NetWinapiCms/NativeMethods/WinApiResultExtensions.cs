@@ -31,13 +31,21 @@ internal static class WinApiResultExtensions
 	}
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	public static int VerifyWinapiZero(this int result)
+	public static nint VerifyWinapiZero(this nint input)
+	{
+		return input == 0 ? input : throw new Win32Exception(Marshal.GetLastPInvokeError());
+	}
+
+
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	public static int VerifyWinapiZeroItself(this int result)
 	{
 		return result == 0 ? result : throw new Win32Exception(result);
 	}
 
+
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	public static uint VerifyWinapiZero(this uint result)
+	public static uint VerifyWinapiZeroItself(this uint result)
 	{
 		return result == 0U ? result : throw new Win32Exception(unchecked((int)result));
 	}

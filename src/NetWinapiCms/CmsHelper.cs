@@ -12,6 +12,7 @@ using System.Text;
 using NetWinapiCms.NativeMethods;
 using static NetWinapiCms.NativeMethods.Advapi32;
 using static NetWinapiCms.NativeMethods.Crypt32;
+using static NetWinapiCms.NativeMethods.Kernel32;
 using static NetWinapiCms.NativeMethods.NCrypt;
 
 namespace NetWinapiCms;
@@ -22,6 +23,7 @@ namespace NetWinapiCms;
 [SupportedOSPlatform("WINDOWS")]
 public static class CmsHelper
 {
+
 	/// <summary>
 	/// Signs a data with a provided certificate
 	/// </summary>
@@ -36,7 +38,7 @@ public static class CmsHelper
 	/// <exception cref="ArgumentException"></exception>
 	/// <exception cref="Win32Exception"></exception>
 	public static unsafe byte[] Sign(ReadOnlySpan<byte> data, bool detachedSignature, X509Certificate2 certificate,
-			Oid digestOid, bool silent, ReadOnlySpan<char> pin)
+		Oid digestOid, bool silent, ReadOnlySpan<char> pin)
 	{
 		if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 			throw new PlatformNotSupportedException();
@@ -66,7 +68,7 @@ public static class CmsHelper
 				// set PIN-code for the private key
 				if (dwKeySpec == CERT_NCRYPT_KEY_SPEC)
 					fixed (char* pPin = pin, pParam = NCRYPT_PIN_PROPERTY)
-						NCryptSetProperty(hProvider, (nint)pParam, (nint)pPin, (uint)(pin.Length + 1) * 2, silent ? NCRYPT_SILENT_FLAG : 0U).VerifyWinapiZero();
+						NCryptSetProperty(hProvider, (nint)pParam, (nint)pPin, (uint)(pin.Length + 1) * 2, silent ? NCRYPT_SILENT_FLAG : 0U).VerifyWinapiZeroItself();
 				else if (dwKeySpec == AT_KEYEXCHANGE || dwKeySpec == AT_SIGNATURE)
 				{
 					var asciiPinLength = Encoding.ASCII.GetByteCount(pin);
@@ -79,7 +81,6 @@ public static class CmsHelper
 
 			// prepare CMSG_SIGNER_ENCODE_INFO structure
 			var signerInfo = new CMSG_SIGNER_ENCODE_INFO();
-			signerInfo.cbSize = (uint)Marshal.SizeOf(signerInfo);
 			signerInfo.pCertInfo = certContext[0].pCertInfo;
 			signerInfo.hKey = hProvider;
 			signerInfo.dwKeySpec = dwKeySpec;
@@ -87,15 +88,14 @@ public static class CmsHelper
 
 			// prepare CMSG_SIGNED_ENCODE_INFO structure
 			var signedInfo = new CMSG_SIGNED_ENCODE_INFO();
-			signedInfo.cbSize = (uint)Marshal.SizeOf(signedInfo);
 			signedInfo.cSigners = 1;
 			signedInfo.rgSigners = (nint)(&signerInfo);
 			signedInfo.cCertEncoded = 1;
 			signedInfo.rgCertEncoded = (nint)(&signerCertBlob);
 
 			// create CMS
-			var hMsg = CryptMsgOpenToEncode(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
-				detachedSignature ? CMSG_DETACHED_FLAG : 0, CMSG_SIGNED, (nint)(&signedInfo), null, 0).VerifyWinapiNonzero();
+			var hMsg = CryptMsgOpenToEncode(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, detachedSignature ? CMSG_DETACHED_FLAG : 0U,
+				CMSG_SIGNED, (nint)(&signedInfo), null, 0).VerifyWinapiNonzero();
 			try
 			{
 				// add, hash, and sign the data
@@ -103,11 +103,11 @@ public static class CmsHelper
 					CryptMsgUpdate(hMsg, (nint)pData, (uint)data.Length, true).VerifyWinapiTrue();
 
 				// extract signed CMS
-				var cmsLength = 0;
-				CryptMsgGetParam(hMsg, CMSG_CONTENT_PARAM, 0, 0, ref cmsLength).VerifyWinapiTrue();
+				var cmsLength = 0U;
+				CryptMsgGetParam(hMsg, CMSG_CONTENT_PARAM, 0, 0, (nint)(&cmsLength)).VerifyWinapiTrue();
 				var cms = new byte[cmsLength];
 				fixed (byte* pSignature = cms)
-					CryptMsgGetParam(hMsg, CMSG_CONTENT_PARAM, 0, (nint)pSignature, ref cmsLength).VerifyWinapiTrue();
+					CryptMsgGetParam(hMsg, CMSG_CONTENT_PARAM, 0, (nint)pSignature, (nint)(&cmsLength)).VerifyWinapiTrue();
 				return cms;
 			}
 			finally
@@ -130,13 +130,13 @@ public static class CmsHelper
 		// extract CERT_ID
 		nint pCertContext = 0;
 		var certIdLength = 0;
-		CryptMsgGetParam(hMsg, CMSG_SIGNER_CERT_ID_PARAM, signerIndex, 0, ref certIdLength).VerifyWinapiTrue();
+		CryptMsgGetParam(hMsg, CMSG_SIGNER_CERT_ID_PARAM, signerIndex, 0, (nint)(&certIdLength)).VerifyWinapiTrue();
 		var certIdRaw = ArrayPool<byte>.Shared.Rent(certIdLength);
 		try
 		{
 			fixed (byte* pCertId = certIdRaw)
 			{
-				CryptMsgGetParam(hMsg, CMSG_SIGNER_CERT_ID_PARAM, signerIndex, (nint)pCertId, ref certIdLength).VerifyWinapiTrue();
+				CryptMsgGetParam(hMsg, CMSG_SIGNER_CERT_ID_PARAM, signerIndex, (nint)pCertId, (nint)(&certIdLength)).VerifyWinapiTrue();
 				pCertContext = CertFindCertificateInStore(hCertStore, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
 					0, CERT_FIND_CERT_ID, (nint)pCertId, 0);
 				if (pCertContext == 0)
@@ -154,38 +154,33 @@ public static class CmsHelper
 			ArrayPool<byte>.Shared.Return(certIdRaw, true);
 		}
 
-		// validate signature
+		// validate the digital signature itself
 		var vsp = new CMSG_CTRL_VERIFY_SIGNATURE_EX_PARA();
-		vsp.cbSize = (uint)Marshal.SizeOf(vsp);
 		vsp.dwSignerIndex = signerIndex;
 		vsp.dwSignerType = CMSG_VERIFY_SIGNER_CERT;
 		vsp.pvSigner = pCertContext;
 		CryptMsgControl(hMsg, 0, CMSG_CTRL_VERIFY_SIGNATURE_EX, (nint)(&vsp)).VerifyWinapiTrue();
 
-		// verify certificates
 		if (verifyCertificates)
 		{
+			// validate certificates
 			nint pChainContext = 0;
 			var chainParams = new CERT_CHAIN_PARA();
-			chainParams.cbSize = (uint)Marshal.SizeOf(chainParams);
 			CertGetCertificateChain(HCCE_CURRENT_USER, pCertContext, 0, hCertStore, (nint)(&chainParams), chainFlags,
 				0, (nint)(&pChainContext)).VerifyWinapiTrue();
-			try
-			{
-				var policyPara = new CERT_CHAIN_POLICY_PARA();
-				policyPara.cbSize = (uint)Marshal.SizeOf(policyPara);
-				var policyStatus = new CERT_CHAIN_POLICY_STATUS();
-				policyStatus.cbSize = (uint)Marshal.SizeOf(policyStatus);
-				CertVerifyCertificateChainPolicy(CERT_CHAIN_POLICY_BASE, pChainContext, (nint)(&policyPara), (nint)(&policyStatus)).VerifyWinapiTrue();
-				policyStatus.dwError.VerifyWinapiZero();
-				CertVerifyCertificateChainPolicy(CERT_CHAIN_POLICY_BASIC_CONSTRAINTS, pChainContext, (nint)(&policyPara), (nint)(&policyStatus)).VerifyWinapiTrue();
-				policyStatus.dwError.VerifyWinapiZero();
-			}
-			finally
-			{
-				if (pChainContext != 0)
+			if (pChainContext != 0)
+				try
+				{
+					var policyStatus = new CERT_CHAIN_POLICY_STATUS();
+					CertVerifyCertificateChainPolicy(CERT_CHAIN_POLICY_BASE, pChainContext, 0, (nint)(&policyStatus)).VerifyWinapiTrue();
+					policyStatus.dwError.VerifyWinapiZeroItself();
+					CertVerifyCertificateChainPolicy(CERT_CHAIN_POLICY_BASIC_CONSTRAINTS, pChainContext, 0, (nint)(&policyStatus)).VerifyWinapiTrue();
+					policyStatus.dwError.VerifyWinapiZeroItself();
+				}
+				finally
+				{
 					CertFreeCertificateChain(pChainContext);
-			}
+				}
 		}
 	}
 
@@ -198,11 +193,12 @@ public static class CmsHelper
 	/// <param name="verifyCertificates">If true also verifies certificates themselves</param>
 	/// <param name="revocationMode">A X509 certificate revocation checking mode</param>
 	/// <param name="revocationFlag">A X509 certificate revocation checking flag</param>
+	/// <param name="revocationFlag">A X509 certificate revocation checking flag</param>
 	/// <exception cref="PlatformNotSupportedException"></exception>
 	/// <exception cref="ArgumentException"></exception>
 	/// <exception cref="Win32Exception"></exception>
 	public static unsafe void Verify(ReadOnlySpan<byte> cms, bool detachedSignature, ReadOnlySpan<byte> data,
-		bool verifyCertificates = false, X509RevocationMode revocationMode = X509RevocationMode.Online,
+		bool verifyCertificates = true, X509RevocationMode revocationMode = X509RevocationMode.Online,
 		X509RevocationFlag revocationFlag = X509RevocationFlag.ExcludeRoot)
 	{
 		if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -229,16 +225,15 @@ public static class CmsHelper
 			try
 			{
 				// determine signer count
-				var signerCount = 0U;
-				var signerCountSize = Marshal.SizeOf(signerCount);
-				CryptMsgGetParam(hMsg, CMSG_SIGNER_COUNT_PARAM, 0, (nint)(&signerCount), ref signerCountSize).VerifyWinapiTrue();
-				if (signerCount == 0)
+				uint signerCount;
+				var signerCountSize = Marshal.SizeOf<uint>();
+				CryptMsgGetParam(hMsg, CMSG_SIGNER_COUNT_PARAM, 0, (nint)(&signerCount), (nint)(&signerCountSize)).VerifyWinapiTrue();
+				if (signerCount == 0U)
 					throw new Win32Exception(CRYPT_E_NO_SIGNER);
 
-				var chainFlags = 0U;
+				var chainFlags = CERT_CHAIN_CACHE_END_CERT | CERT_CHAIN_REVOCATION_ACCUMULATIVE_TIMEOUT;
 				if (verifyCertificates && revocationMode != X509RevocationMode.NoCheck)
-				{
-					chainFlags = (revocationMode == X509RevocationMode.Offline ? CERT_CHAIN_REVOCATION_CHECK_CACHE_ONLY : 0U)
+					chainFlags |= (revocationMode == X509RevocationMode.Offline ? CERT_CHAIN_REVOCATION_CHECK_CACHE_ONLY : 0U)
 						| revocationFlag switch
 						{
 							X509RevocationFlag.EndCertificateOnly => CERT_CHAIN_REVOCATION_CHECK_END_CERT,
@@ -246,7 +241,6 @@ public static class CmsHelper
 							X509RevocationFlag.EntireChain => CERT_CHAIN_REVOCATION_CHECK_CHAIN,
 							_ => 0U
 						};
-				};
 
 				// verify signature for every signer
 				for (var i = 0U; i < signerCount; i++)
@@ -256,6 +250,123 @@ public static class CmsHelper
 			{
 				CertCloseStore(hCertStore, CERT_CLOSE_STORE_FORCE_FLAG);
 			}
+		}
+		finally
+		{
+			CryptMsgClose(hMsg);
+		}
+	}
+
+
+	/// <summary>
+	/// Calculates a timestamp token for a given data
+	/// </summary>
+	/// <param name="data">A source binary data for timestamping</param>
+	/// <param name="tspDigestOid">An OID of a message digest algorithm</param>
+	/// <param name="nonce">A nonce value, can be empty</param>
+	/// <param name="tsaUri">An URI of a TSA</param>
+	/// <param name="timeout">A TSA request timeout</param>
+	/// <returns>A timestamp token in DER encoding</returns>
+	public static unsafe byte[] RetriveTimestamp(ReadOnlySpan<byte> data, Oid tspDigestOid, ReadOnlySpan<byte> nonce, string tsaUri, TimeSpan timeout)
+	{
+		var tspReq = new CRYPT_TIMESTAMP_PARA();
+		tspReq.fRequestCerts = true;
+		fixed (byte* pData = data, pNonce = nonce)
+		{
+			if (nonce.Length > 0)
+			{
+				tspReq.Nonce.cbData = (uint)nonce.Length;
+				tspReq.Nonce.pbData = (nint)pNonce;
+			}
+
+			nint pTsContext;
+			CryptRetrieveTimeStamp(tsaUri, TIMESTAMP_NO_AUTH_RETRIEVAL | TIMESTAMP_VERIFY_CONTEXT_SIGNATURE,
+				timeout.Milliseconds, tspDigestOid.Value, (nint)(&tspReq), (nint)pData, (uint)data.Length,
+				(nint)(&pTsContext), 0, 0).VerifyWinapiTrue();
+			try
+			{
+				var tsContext = new ReadOnlySpan<CRYPT_TIMESTAMP_CONTEXT>(pTsContext.ToPointer(), 1);
+				var tst = new ReadOnlySpan<byte>(tsContext[0].pbEncoded.ToPointer(), (int)tsContext[0].cbEncoded);
+				return tst.ToArray();
+			}
+			finally
+			{
+				if (pTsContext != 0)
+					CryptMemFree(pTsContext);
+			}
+		}
+	}
+
+	/// <summary>
+	/// Calculates and adds a timestamp token to a CMS message as an unsigned attribute
+	/// </summary>
+	/// <param name="cms">A target CMS message</param>
+	/// <param name="detachedSignature">A flag of the detached signature in the CMS</param>
+	/// <param name="signerIndex">An index of the CMS signer</param>
+	/// <param name="tspDigestOid">An OID of a message digest algorithm</param>
+	/// <param name="nonce">A nonce value, can be empty</param>
+	/// <param name="tsaUri">An URI of a TSA</param>
+	/// <param name="timeout">A TSA request timeout</param>
+	/// <returns>A new CMS message with an injected timestamp token</returns>
+	public static unsafe byte[] AddTimestampToCms(ReadOnlySpan<byte> cms, bool detachedSignature, uint signerIndex,
+		Oid tspDigestOid, ReadOnlySpan<byte> nonce, string tsaUri, TimeSpan timeout)
+	{
+		var hMsg = CryptMsgOpenToDecode(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, detachedSignature ? CMSG_DETACHED_FLAG : 0U, 0, 0, 0, 0)
+			.VerifyWinapiNonzero();
+		try
+		{
+			// load the CMS signed message
+			fixed (byte* pCms = cms)
+				CryptMsgUpdate(hMsg, (nint)pCms, (uint)cms.Length, true).VerifyWinapiTrue();
+
+			// extract the signature from the CMS message for the specified signerIndex
+			var signatureLength = 0;
+			CryptMsgGetParam(hMsg, CMSG_ENCRYPTED_DIGEST, signerIndex, 0, (nint)(&signatureLength)).VerifyWinapiTrue();
+			var signature = stackalloc byte[signatureLength];
+			CryptMsgGetParam(hMsg, CMSG_ENCRYPTED_DIGEST, signerIndex, (nint)signature, (nint)(&signatureLength)).VerifyWinapiTrue();
+
+			// receive timestamp on the extracted signature
+			var tst = RetriveTimestamp(new ReadOnlySpan<byte>(signature, signatureLength), tspDigestOid, nonce, tsaUri, timeout);
+
+			// add a new unsigned attribute
+			fixed (byte* pzdObjId = "1.2.840.113549.1.9.16.2.14"u8, pTst = tst)
+			{
+				var tstBlob = new CRYPT_INTEGER_BLOB();
+				tstBlob.cbData = (uint)tst.Length;
+				tstBlob.pbData = (nint)pTst;
+
+				var tstAttr = new CRYPT_ATTRIBUTE();
+				tstAttr.pszObjId = (nint)pzdObjId;
+				tstAttr.cValue = 1;
+				tstAttr.rgValue = (nint)(&tstBlob);
+
+				// encode a timestamp attribute to DER
+				var attr = (nint)0;
+				var attrLen = 0U;
+				CryptEncodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, PKCS_ATTRIBUTE, (nint)(&tstAttr), CRYPT_ENCODE_ALLOC_FLAG,
+					0, (nint)(&attr), (nint)(&attrLen)).VerifyWinapiTrue();
+				try
+				{
+					// inject the encoded unsigned attribute to the SignerInfo
+					var cmsAttr = new CMSG_CTRL_ADD_SIGNER_UNAUTH_ATTR_PARA();
+					cmsAttr.dwSignerIndex = signerIndex;
+					cmsAttr.blob.cbData = attrLen;
+					cmsAttr.blob.pbData = attr;
+					CryptMsgControl(hMsg, 0, CMSG_CTRL_ADD_SIGNER_UNAUTH_ATTR, (nint)(&cmsAttr)).VerifyWinapiTrue();
+				}
+				finally
+				{
+					LocalFree(attr).VerifyWinapiZero();
+				}
+			}
+
+			// extract the updated CMS message
+			uint updatedCmsLength = 0;
+			CryptMsgGetParam(hMsg, CMSG_ENCODED_MESSAGE, 0, 0, (nint)(&updatedCmsLength)).VerifyWinapiTrue();
+			var updatedCms = new byte[updatedCmsLength];
+			fixed (byte* pUpdatedCms = updatedCms)
+				CryptMsgGetParam(hMsg, CMSG_ENCODED_MESSAGE, 0, (nint)pUpdatedCms, (nint)(&updatedCmsLength)).VerifyWinapiTrue();
+			return updatedCms;
 		}
 		finally
 		{
