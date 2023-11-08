@@ -10,7 +10,14 @@ For signing data use the following code snippet:
 ```c#
 var certificate = new X509Certificate(...);
 var data = Encoding.UTF8.GetBytes("Test");
-var digestOid = GostOids.id_tc26_gost3410_12_256;
+Oid digestOid;
+if (certificate.PublicKey.Oid.Value == GostOids.id_tc26_gost3410_12_256.Value)
+	digestOid = GostOids.id_tc26_gost3411_12_256;
+else if (certificate.PublicKey.Oid.Value == GostOids.id_tc26_gost3410_12_512.Value)
+	digestOid = GostOids.id_tc26_gost3411_12_512;
+else
+	digestOid = OiwOids.id_sha1;
+	
 var signedCms = CmsHelper.Sign(data, true, certificate, digestOid, true, "12345678");
 ```
 
