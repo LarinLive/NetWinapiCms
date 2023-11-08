@@ -46,7 +46,7 @@ public static class CmsHelper
 		// prepare digest OID
 		var digestOidLength = Encoding.ASCII.GetByteCount(digestOid.Value ?? throw new ArgumentException("Disget OID is undefined", nameof(digestOid)));
 		var digestOidRaw = stackalloc byte[digestOidLength + 1];
-		Encoding.ASCII.GetBytes(pin, new Span<byte>(digestOidRaw, digestOidLength));
+		Encoding.ASCII.GetBytes(digestOid.Value, new Span<byte>(digestOidRaw, digestOidLength));
 
 		// acquiring certificate context
 		var certContext = new ReadOnlySpan<CERT_CONTEXT>(certificate.Handle.ToPointer(), 1);
